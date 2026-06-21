@@ -33,6 +33,13 @@ export const VenuesAPI = {
   deletePhoto: (id, photoId) => req(`/venues/${id}/photos/${photoId}`, { method: 'DELETE' }),
 };
 
+export const BookingsAPI = {
+  publicVenue: (id) => req(`/public/venues/${id}`),
+  bookedRanges: (id) => req(`/public/venues/${id}/booked`),
+  create: (id, body) => req(`/venues/${id}/bookings`, { method: 'POST', ...json(body) }),
+  mine: () => req('/bookings'),
+};
+
 // Espelha a allowlist do backend (internal/venues/service.go).
 export const AMENITIES = [
   { key: 'wifi', label: 'Wi-Fi' },

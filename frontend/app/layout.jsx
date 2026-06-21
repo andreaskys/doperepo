@@ -1,4 +1,10 @@
+import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google';
 import './globals.css';
+import SiteNav from './components/site-nav';
+
+// Corpo/UI: sans moderna com personalidade. Títulos: serifa suave (clima de evento).
+const sans = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+const display = Fraunces({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
 
 export const metadata = {
   title: 'Espaços — aluguel para festas e eventos',
@@ -7,8 +13,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR">
-      <body>{children}</body>
+    <html lang="pt-BR" className={`${sans.variable} ${display.variable}`}>
+      <body>
+        <SiteNav />
+        {children}
+      </body>
     </html>
   );
 }

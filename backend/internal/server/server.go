@@ -8,6 +8,7 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/doperepo/backend/internal/auth"
+	"github.com/doperepo/backend/internal/bookings"
 	"github.com/doperepo/backend/internal/config"
 	"github.com/doperepo/backend/internal/db/sqlc"
 	"github.com/doperepo/backend/internal/platform/rabbitmq"
@@ -39,11 +40,12 @@ func New(deps Deps) *gin.Engine {
 	secure := deps.Cfg.Env == "production"
 	authH := auth.NewHandler(auth.NewService(queries, deps.Redis), secure)
 	venuesH := venues.NewHandler(venues.NewService(queries, deps.Storage))
+	bookingsH := bookings.NewHandler(bookings.NewService(deps.DB, queries))
 
 	api := r.Group("/api/v1")
 	authH.Routes(api)
 	venuesH.Routes(api, authH.RequireAuth())
-	// bookings entram aqui na próxima iteração.
+	bookingsH.Routes(api, authH.RequireAuth())
 
 	return r
 }

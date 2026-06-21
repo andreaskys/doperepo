@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { VenuesAPI, AMENITIES } from '../../lib';
 import PhotoManager from '../../photo-manager';
+import MapPicker from '../../../components/MapPicker';
+
+const splitFeatures = (s) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 export default function EditVenuePage() {
   const { id } = useParams();
@@ -25,6 +28,9 @@ export default function EditVenuePage() {
           city: v.city,
           state: v.state,
           amenities: v.amenities || [],
+          latitude: v.latitude ?? '',
+          longitude: v.longitude ?? '',
+          featuresText: (v.features || []).join(', '),
         });
         setPhotos(v.photos || []);
       })
@@ -41,6 +47,17 @@ export default function EditVenuePage() {
       amenities: s.amenities.includes(k) ? s.amenities.filter((a) => a !== k) : [...s.amenities, k],
     }));
 
+  function handleMapSelect({ lat, lng, address, city, state }) {
+    setF((s) => ({
+      ...s,
+      latitude: String(lat),
+      longitude: String(lng),
+      address: address || s.address,
+      city: city || s.city,
+      state: state || s.state,
+    }));
+  }
+
   async function save() {
     setBusy(true);
     setError('');
@@ -54,8 +71,9 @@ export default function EditVenuePage() {
         city: f.city,
         state: f.state,
         amenities: f.amenities,
-        latitude: null,
-        longitude: null,
+        features: splitFeatures(f.featuresText),
+        latitude: f.latitude !== '' && f.latitude != null ? Number(f.latitude) : null,
+        longitude: f.longitude !== '' && f.longitude != null ? Number(f.longitude) : null,
       });
       router.push('/venues/mine');
       router.refresh();
@@ -80,6 +98,19 @@ export default function EditVenuePage() {
           <label>Cidade<input value={f.city} onChange={set('city')} /></label>
           <label>Estado<input value={f.state} onChange={set('state')} maxLength={2} /></label>
         </div>
+        <p className="field-label">Local no mapa</p>
+        <MapPicker
+          lat={f.latitude !== '' ? Number(f.latitude) : null}
+          lng={f.longitude !== '' ? Number(f.longitude) : null}
+          onSelect={handleMapSelect}
+        />
+        <p className="field-label">O que tem no espaço? (separe por vírgula)</p>
+        <input value={f.featuresText} onChange={set('featuresText')} placeholder="Ex: piscina aquecida, 3 quartos, churrasqueira" />
+        {splitFeatures(f.featuresText).length > 0 && (
+          <div className="tags">
+            {splitFeatures(f.featuresText).map((x, i) => <span key={i} className="tag">{x}</span>)}
+          </div>
+        )}
         <p className="field-label">Comodidades</p>
         <div className="chips">
           {AMENITIES.map((a) => (

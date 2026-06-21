@@ -1,11 +1,9 @@
-import SiteNav from './components/site-nav';
 import VenueGrid from './components/venue-grid';
 import Footer from './components/footer';
 
 export default function Home() {
   return (
     <>
-      <SiteNav />
       <main className="home">
         <section className="hero">
           <h1>Encontre o espaço perfeito para o seu evento</h1>

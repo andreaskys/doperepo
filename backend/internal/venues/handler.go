@@ -31,7 +31,8 @@ func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 
 // Routes registra as rotas de venues atrás do middleware de auth informado.
 func (h *Handler) Routes(rg *gin.RouterGroup, requireAuth gin.HandlerFunc) {
-	rg.GET("/public/venues", h.listPublic) // público, sem auth (home)
+	rg.GET("/public/venues", h.listPublic)      // listagem da home
+	rg.GET("/public/venues/:id", h.getPublic)   // detalhe (tela de reserva)
 
 	g := rg.Group("/venues", requireAuth)
 	g.GET("", h.listMine)
@@ -55,13 +56,14 @@ type venueReq struct {
 	Latitude    *float64 `json:"latitude"`
 	Longitude   *float64 `json:"longitude"`
 	Amenities   []string `json:"amenities"`
+	Features    []string `json:"features"`
 }
 
 func (r venueReq) toInput() VenueInput {
 	return VenueInput{
 		Title: r.Title, Description: r.Description, Capacity: r.Capacity,
 		Price: r.Price, Address: r.Address, City: r.City, State: r.State,
-		Latitude: r.Latitude, Longitude: r.Longitude, Amenities: r.Amenities,
+		Latitude: r.Latitude, Longitude: r.Longitude, Amenities: r.Amenities, Features: r.Features,
 	}
 }
 
@@ -97,6 +99,22 @@ func (h *Handler) listPublic(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// getPublic devolve o detalhe de um anúncio PUBLICADO (tela de reserva, sem auth).
+func (h *Handler) getPublic(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+		return
+	}
+	v, err := h.svc.Get(c.Request.Context(), id)
+	if err != nil || v.Status != sqlc.VenueStatusPUBLISHED {
+		c.JSON(http.StatusNotFound, gin.H{"error": "anúncio não encontrado"})
+		return
+	}
+	photos, _ := h.svc.Photos(c.Request.Context(), v.ID)
+	c.JSON(http.StatusOK, venueDTO(v, photos))
 }
 
 func (h *Handler) listMine(c *gin.Context) {
@@ -264,6 +282,7 @@ type venueResponse struct {
 	Latitude    *float64    `json:"latitude"`
 	Longitude   *float64    `json:"longitude"`
 	Amenities   []string    `json:"amenities"`
+	Features    []string    `json:"features"`
 	Status      string      `json:"status"`
 	Photos      []photoResp `json:"photos"`
 }
@@ -291,7 +310,7 @@ func venueDTO(v sqlc.Venue, photos []sqlc.VenuePhoto) venueResponse {
 		ID: v.ID, HostID: v.HostID, Title: v.Title, Description: v.Description,
 		Capacity: v.Capacity, PricePerDay: priceString(v.PricePerDay), Address: v.Address,
 		City: v.City, State: v.State, Latitude: v.Latitude, Longitude: v.Longitude,
-		Amenities: v.Amenities, Status: string(v.Status), Photos: []photoResp{},
+		Amenities: v.Amenities, Features: v.Features, Status: string(v.Status), Photos: []photoResp{},
 	}
 	for _, p := range photos {
 		out.Photos = append(out.Photos, photoDTO(p))

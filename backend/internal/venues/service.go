@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -53,6 +54,7 @@ type VenueInput struct {
 	Latitude    *float64
 	Longitude   *float64
 	Amenities   []string
+	Features    []string
 }
 
 func (s *Service) Create(ctx context.Context, hostID int64, in VenueInput) (sqlc.Venue, error) {
@@ -75,6 +77,7 @@ func (s *Service) Create(ctx context.Context, hostID int64, in VenueInput) (sqlc
 		Latitude:    in.Latitude,
 		Longitude:   in.Longitude,
 		Amenities:   orEmpty(in.Amenities),
+		Features:    normFeatures(in.Features),
 	})
 }
 
@@ -98,6 +101,7 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 		Latitude:    in.Latitude,
 		Longitude:   in.Longitude,
 		Amenities:   orEmpty(in.Amenities),
+		Features:    normFeatures(in.Features),
 	})
 }
 
@@ -209,4 +213,23 @@ func orEmpty(a []string) []string {
 		return []string{} // coluna é NOT NULL DEFAULT '{}'
 	}
 	return a
+}
+
+// normFeatures limpa as etiquetas livres: trim, sem vazias/duplicadas, com teto.
+func normFeatures(a []string) []string {
+	out := make([]string, 0, len(a))
+	seen := map[string]bool{}
+	for _, x := range a {
+		x = strings.TrimSpace(x)
+		k := strings.ToLower(x)
+		if x == "" || len(x) > 60 || seen[k] {
+			continue
+		}
+		seen[k] = true
+		out = append(out, x)
+		if len(out) >= 30 {
+			break
+		}
+	}
+	return out
 }

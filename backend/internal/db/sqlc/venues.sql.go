@@ -46,12 +46,12 @@ func (q *Queries) AddVenuePhoto(ctx context.Context, arg AddVenuePhotoParams) (V
 const createVenue = `-- name: CreateVenue :one
 INSERT INTO venues (
     host_id, title, description, capacity, price_per_day,
-    address, city, state, latitude, longitude, amenities
+    address, city, state, latitude, longitude, amenities, features
 ) VALUES (
     $1, $2, $3, $4, $5,
-    $6, $7, $8, $9, $10, $11
+    $6, $7, $8, $9, $10, $11, $12
 )
-RETURNING id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status
+RETURNING id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status, features
 `
 
 type CreateVenueParams struct {
@@ -66,6 +66,7 @@ type CreateVenueParams struct {
 	Latitude    *float64       `json:"latitude"`
 	Longitude   *float64       `json:"longitude"`
 	Amenities   []string       `json:"amenities"`
+	Features    []string       `json:"features"`
 }
 
 // Nasce como DRAFT (default da coluna status).
@@ -82,6 +83,7 @@ func (q *Queries) CreateVenue(ctx context.Context, arg CreateVenueParams) (Venue
 		arg.Latitude,
 		arg.Longitude,
 		arg.Amenities,
+		arg.Features,
 	)
 	var i Venue
 	err := row.Scan(
@@ -99,6 +101,7 @@ func (q *Queries) CreateVenue(ctx context.Context, arg CreateVenueParams) (Venue
 		&i.Longitude,
 		&i.Amenities,
 		&i.Status,
+		&i.Features,
 	)
 	return i, err
 }
@@ -122,7 +125,7 @@ func (q *Queries) DeleteVenuePhoto(ctx context.Context, id int64) error {
 }
 
 const getVenueByID = `-- name: GetVenueByID :one
-SELECT id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status FROM venues WHERE id = $1
+SELECT id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status, features FROM venues WHERE id = $1
 `
 
 func (q *Queries) GetVenueByID(ctx context.Context, id int64) (Venue, error) {
@@ -143,6 +146,7 @@ func (q *Queries) GetVenueByID(ctx context.Context, id int64) (Venue, error) {
 		&i.Longitude,
 		&i.Amenities,
 		&i.Status,
+		&i.Features,
 	)
 	return i, err
 }
@@ -272,7 +276,7 @@ func (q *Queries) ListVenuePhotos(ctx context.Context, venueID int64) ([]VenuePh
 }
 
 const listVenuesByHost = `-- name: ListVenuesByHost :many
-SELECT id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status FROM venues WHERE host_id = $1 ORDER BY created_at DESC
+SELECT id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status, features FROM venues WHERE host_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) ListVenuesByHost(ctx context.Context, hostID int64) ([]Venue, error) {
@@ -299,6 +303,7 @@ func (q *Queries) ListVenuesByHost(ctx context.Context, hostID int64) ([]Venue, 
 			&i.Longitude,
 			&i.Amenities,
 			&i.Status,
+			&i.Features,
 		); err != nil {
 			return nil, err
 		}
@@ -311,7 +316,7 @@ func (q *Queries) ListVenuesByHost(ctx context.Context, hostID int64) ([]Venue, 
 }
 
 const publishVenue = `-- name: PublishVenue :one
-UPDATE venues SET status = 'PUBLISHED' WHERE id = $1 RETURNING id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status
+UPDATE venues SET status = 'PUBLISHED' WHERE id = $1 RETURNING id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status, features
 `
 
 func (q *Queries) PublishVenue(ctx context.Context, id int64) (Venue, error) {
@@ -332,6 +337,7 @@ func (q *Queries) PublishVenue(ctx context.Context, id int64) (Venue, error) {
 		&i.Longitude,
 		&i.Amenities,
 		&i.Status,
+		&i.Features,
 	)
 	return i, err
 }
@@ -347,9 +353,10 @@ UPDATE venues SET
     state         = $7,
     latitude      = $8,
     longitude     = $9,
-    amenities     = $10
-WHERE id = $11
-RETURNING id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status
+    amenities     = $10,
+    features      = $11
+WHERE id = $12
+RETURNING id, host_id, title, description, capacity, price_per_day, address, created_at, city, state, latitude, longitude, amenities, status, features
 `
 
 type UpdateVenueParams struct {
@@ -363,6 +370,7 @@ type UpdateVenueParams struct {
 	Latitude    *float64       `json:"latitude"`
 	Longitude   *float64       `json:"longitude"`
 	Amenities   []string       `json:"amenities"`
+	Features    []string       `json:"features"`
 	ID          int64          `json:"id"`
 }
 
@@ -378,6 +386,7 @@ func (q *Queries) UpdateVenue(ctx context.Context, arg UpdateVenueParams) (Venue
 		arg.Latitude,
 		arg.Longitude,
 		arg.Amenities,
+		arg.Features,
 		arg.ID,
 	)
 	var i Venue
@@ -396,6 +405,7 @@ func (q *Queries) UpdateVenue(ctx context.Context, arg UpdateVenueParams) (Venue
 		&i.Longitude,
 		&i.Amenities,
 		&i.Status,
+		&i.Features,
 	)
 	return i, err
 }

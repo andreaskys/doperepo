@@ -173,6 +173,7 @@ type Venue struct {
 	Longitude   *float64           `json:"longitude"`
 	Amenities   []string           `json:"amenities"`
 	Status      VenueStatus        `json:"status"`
+	Features    []string           `json:"features"`
 }
 
 type VenuePhoto struct {

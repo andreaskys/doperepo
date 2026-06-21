@@ -25,7 +25,7 @@ export default function VenueGrid() {
   return (
     <section className="venue-grid">
       {venues.map((v) => (
-        <article key={v.id} className="vcard">
+        <a key={v.id} className="vcard" href={`/venues/${v.id}/reservar`}>
           <div className="vcard-cover">
             {v.cover_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -39,7 +39,7 @@ export default function VenueGrid() {
             <p className="muted">{v.city}/{v.state} · {v.capacity} pessoas</p>
             <p className="vcard-price">R$ {v.price_per_day}<span>/dia</span></p>
           </div>
-        </article>
+        </a>
       ))}
     </section>
   );

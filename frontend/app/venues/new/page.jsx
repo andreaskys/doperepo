@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VenuesAPI, AMENITIES } from '../lib';
 import PhotoManager from '../photo-manager';
+import MapPicker from '../../components/MapPicker';
 
 const STEPS = ['Básico', 'Localização', 'Preço', 'Fotos', 'Revisão'];
+const splitFeatures = (s) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 export default function NewVenuePage() {
   const router = useRouter();
@@ -16,7 +18,7 @@ export default function NewVenuePage() {
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
     title: '', description: '', capacity: '', price_per_day: '',
-    address: '', city: '', state: '', latitude: '', longitude: '', amenities: [],
+    address: '', city: '', state: '', latitude: '', longitude: '', amenities: [], featuresText: '',
   });
 
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
@@ -25,6 +27,17 @@ export default function NewVenuePage() {
       ...s,
       amenities: s.amenities.includes(k) ? s.amenities.filter((a) => a !== k) : [...s.amenities, k],
     }));
+
+  function handleMapSelect({ lat, lng, address, city, state }) {
+    setF((s) => ({
+      ...s,
+      latitude: String(lat),
+      longitude: String(lng),
+      address: address || s.address,
+      city: city || s.city,
+      state: state || s.state,
+    }));
+  }
 
   const canNext = () => {
     if (step === 0) return f.title.trim().length >= 3 && Number(f.capacity) > 0;
@@ -42,6 +55,7 @@ export default function NewVenuePage() {
     city: f.city,
     state: f.state,
     amenities: f.amenities,
+    features: splitFeatures(f.featuresText),
     latitude: f.latitude ? Number(f.latitude) : null,
     longitude: f.longitude ? Number(f.longitude) : null,
   });
@@ -89,6 +103,7 @@ export default function NewVenuePage() {
   return (
     <main className="container wizard">
       <h1>Anunciar espaço</h1>
+      <div className="wizard-card">
       <ol className="steps">
         {STEPS.map((label, i) => (
           <li key={label} className={i === step ? 'on' : i < step ? 'done' : ''}>{label}</li>
@@ -110,10 +125,15 @@ export default function NewVenuePage() {
               <label>Cidade<input value={f.city} onChange={set('city')} /></label>
               <label>Estado<input value={f.state} onChange={set('state')} maxLength={2} placeholder="UF" /></label>
             </div>
-            <div className="row">
-              <label>Latitude (opcional)<input type="number" step="any" value={f.latitude} onChange={set('latitude')} /></label>
-              <label>Longitude (opcional)<input type="number" step="any" value={f.longitude} onChange={set('longitude')} /></label>
-            </div>
+            <p className="field-label">Marque o local no mapa (clica e arrasta pra navegar)</p>
+            <MapPicker
+              lat={f.latitude ? Number(f.latitude) : null}
+              lng={f.longitude ? Number(f.longitude) : null}
+              onSelect={handleMapSelect}
+            />
+            {f.latitude && f.longitude && (
+              <p className="muted">📍 {Number(f.latitude).toFixed(5)}, {Number(f.longitude).toFixed(5)} — clique no mapa pra ajustar</p>
+            )}
           </>
         )}
         {step === 2 && (
@@ -127,6 +147,13 @@ export default function NewVenuePage() {
                 </button>
               ))}
             </div>
+            <p className="field-label">O que tem no espaço? (separe por vírgula)</p>
+            <input value={f.featuresText} onChange={set('featuresText')} placeholder="Ex: piscina aquecida, 3 quartos, churrasqueira" />
+            {splitFeatures(f.featuresText).length > 0 && (
+              <div className="tags">
+                {splitFeatures(f.featuresText).map((x, i) => <span key={i} className="tag">{x}</span>)}
+              </div>
+            )}
           </>
         )}
         {step === 3 && (
@@ -157,6 +184,7 @@ export default function NewVenuePage() {
             <button type="button" className="button" onClick={() => finish(true)} disabled={busy}>{busy ? '...' : 'Publicar'}</button>
           </>
         )}
+      </div>
       </div>
     </main>
   );

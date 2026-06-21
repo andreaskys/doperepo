@@ -2,10 +2,10 @@
 -- Nasce como DRAFT (default da coluna status).
 INSERT INTO venues (
     host_id, title, description, capacity, price_per_day,
-    address, city, state, latitude, longitude, amenities
+    address, city, state, latitude, longitude, amenities, features
 ) VALUES (
     @host_id, @title, @description, @capacity, @price_per_day,
-    @address, @city, @state, @latitude, @longitude, @amenities
+    @address, @city, @state, @latitude, @longitude, @amenities, @features
 )
 RETURNING *;
 
@@ -36,7 +36,8 @@ UPDATE venues SET
     state         = @state,
     latitude      = @latitude,
     longitude     = @longitude,
-    amenities     = @amenities
+    amenities     = @amenities,
+    features      = @features
 WHERE id = @id
 RETURNING *;
 

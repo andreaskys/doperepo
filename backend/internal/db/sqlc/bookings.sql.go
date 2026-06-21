@@ -13,25 +13,30 @@ import (
 
 const createBooking = `-- name: CreateBooking :one
 INSERT INTO bookings (venue_id, guest_id, start_date, end_date, total_price, status)
-VALUES ($1, $2, $3, $4, $5, 'PENDING')
+VALUES (
+    $1, $2, $3, $4,
+    (SELECT price_per_day FROM venues WHERE id = $1) * $5,
+    'PENDING'
+)
 RETURNING id, venue_id, guest_id, start_date, end_date, total_price, status, created_at
 `
 
 type CreateBookingParams struct {
-	VenueID    int64          `json:"venue_id"`
-	GuestID    int64          `json:"guest_id"`
-	StartDate  pgtype.Date    `json:"start_date"`
-	EndDate    pgtype.Date    `json:"end_date"`
-	TotalPrice pgtype.Numeric `json:"total_price"`
+	VenueID   int64          `json:"venue_id"`
+	GuestID   int64          `json:"guest_id"`
+	StartDate pgtype.Date    `json:"start_date"`
+	EndDate   pgtype.Date    `json:"end_date"`
+	Nights    pgtype.Numeric `json:"nights"`
 }
 
+// total = preço/dia × nº de diárias (@nights, calculado no Go).
 func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error) {
 	row := q.db.QueryRow(ctx, createBooking,
 		arg.VenueID,
 		arg.GuestID,
 		arg.StartDate,
 		arg.EndDate,
-		arg.TotalPrice,
+		arg.Nights,
 	)
 	var i Booking
 	err := row.Scan(
@@ -69,27 +74,112 @@ func (q *Queries) HasOverlappingBooking(ctx context.Context, arg HasOverlappingB
 	return overlaps, err
 }
 
+const listBookingsByGuest = `-- name: ListBookingsByGuest :many
+SELECT b.id, b.venue_id, b.guest_id, b.start_date, b.end_date, b.total_price, b.status, b.created_at,
+       v.title AS venue_title, v.city AS venue_city, v.state AS venue_state
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+WHERE b.guest_id = $1
+ORDER BY b.created_at DESC
+`
+
+type ListBookingsByGuestRow struct {
+	ID         int64              `json:"id"`
+	VenueID    int64              `json:"venue_id"`
+	GuestID    int64              `json:"guest_id"`
+	StartDate  pgtype.Date        `json:"start_date"`
+	EndDate    pgtype.Date        `json:"end_date"`
+	TotalPrice pgtype.Numeric     `json:"total_price"`
+	Status     BookingStatus      `json:"status"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	VenueTitle string             `json:"venue_title"`
+	VenueCity  string             `json:"venue_city"`
+	VenueState string             `json:"venue_state"`
+}
+
+func (q *Queries) ListBookingsByGuest(ctx context.Context, guestID int64) ([]ListBookingsByGuestRow, error) {
+	rows, err := q.db.Query(ctx, listBookingsByGuest, guestID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListBookingsByGuestRow
+	for rows.Next() {
+		var i ListBookingsByGuestRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VenueID,
+			&i.GuestID,
+			&i.StartDate,
+			&i.EndDate,
+			&i.TotalPrice,
+			&i.Status,
+			&i.CreatedAt,
+			&i.VenueTitle,
+			&i.VenueCity,
+			&i.VenueState,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVenueBookedRanges = `-- name: ListVenueBookedRanges :many
+SELECT start_date, end_date FROM bookings
+WHERE venue_id = $1 AND status <> 'CANCELLED'
+ORDER BY start_date
+`
+
+type ListVenueBookedRangesRow struct {
+	StartDate pgtype.Date `json:"start_date"`
+	EndDate   pgtype.Date `json:"end_date"`
+}
+
+func (q *Queries) ListVenueBookedRanges(ctx context.Context, venueID int64) ([]ListVenueBookedRangesRow, error) {
+	rows, err := q.db.Query(ctx, listVenueBookedRanges, venueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListVenueBookedRangesRow
+	for rows.Next() {
+		var i ListVenueBookedRangesRow
+		if err := rows.Scan(&i.StartDate, &i.EndDate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lockVenueForBooking = `-- name: LockVenueForBooking :one
 
-SELECT id, price_per_day FROM venues WHERE id = $1 FOR UPDATE
+SELECT id, status FROM venues WHERE id = $1 FOR UPDATE
 `
 
 type LockVenueForBookingRow struct {
-	ID          int64          `json:"id"`
-	PricePerDay pgtype.Numeric `json:"price_per_day"`
+	ID     int64       `json:"id"`
+	Status VenueStatus `json:"status"`
 }
 
-// Primitivos do fluxo crítico de reserva. O use case roda os três dentro de uma
-// única transação pgx:
-//  1. LockVenueForBooking  (SELECT ... FOR UPDATE) — serializa concorrentes
-//  2. HasOverlappingBooking — confere disponibilidade já com o lock segurado
-//  3. CreateBooking — insere (a exclusion constraint é a rede de segurança)
+// Fluxo crítico de reserva. O service roda os 3 primeiros DENTRO de uma única
+// transação pgx:
+//  1. LockVenueForBooking (FOR UPDATE) — serializa concorrentes no mesmo espaço
+//  2. HasOverlappingBooking — checa disponibilidade já com o lock segurado
+//  3. CreateBooking — insere (total no SQL; a EXCLUDE constraint é a rede de segurança)
 //
-// Pessimistic lock: chame DENTRO de uma tx para serializar tentativas
-// concorrentes de reserva do mesmo espaço antes de checar disponibilidade.
+// Pessimistic lock: trava a linha do espaço até o fim da tx.
 func (q *Queries) LockVenueForBooking(ctx context.Context, id int64) (LockVenueForBookingRow, error) {
 	row := q.db.QueryRow(ctx, lockVenueForBooking, id)
 	var i LockVenueForBookingRow
-	err := row.Scan(&i.ID, &i.PricePerDay)
+	err := row.Scan(&i.ID, &i.Status)
 	return i, err
 }
