@@ -1,0 +1,606 @@
+:root {
+  /* Easing — curvas custom fortes (Emil / animations.dev). As nativas do CSS são
+     fracas demais; estas dão o "punch" intencional. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Durações — UI fica < 300ms. */
+  --duration-press: 160ms;
+  --duration-popover: 200ms;
+  --duration-modal: 300ms;
+
+  /* Paleta da marca — site branco, contraste = gradiente roxo→azul (alinhado à
+     animação Iridescence). Padrão do site. */
+  --brand-purple: #6b4fd0;
+  --brand-blue: #3b82f6;
+  --brand-gradient: linear-gradient(135deg, var(--brand-purple), var(--brand-blue));
+  --brand-tint: rgba(107, 79, 208, 0.1); /* foco/realce suave */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #111;
+  background: #fff;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 96px 24px;
+}
+
+/* Elementos pressionáveis devem responder ao toque: encolhe no :active, volta
+   rápido. Só transform (GPU). */
+.button {
+  font: inherit;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--brand-gradient);
+  color: #fff;
+  cursor: pointer;
+  transition: transform var(--duration-press) var(--ease-out);
+}
+.button:active {
+  transform: scale(0.97);
+}
+
+/* Hover só em ponteiro fino — touch dispara hover falso no tap. */
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Reduced motion: mais suave, sem movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .button:active,
+  .button:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ===== Auth split-screen (login/signup) ===== */
+.auth-split {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+/* Painéis absolutos em vw: deslizam por transform (GPU). Login: visual 60% à
+   esquerda, form 40% à direita. Signup: trocam de lado. */
+.auth-visual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60vw;
+  height: 100vh;
+  transform: translateX(0);
+  /* mais suave/lento: easeInOut suave (override do Emil para esta tela) */
+  transition: transform 800ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.auth-pane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40vw;
+  height: 100vh;
+  transform: translateX(60vw);
+  /* mais suave/lento: easeInOut suave (override do Emil para esta tela) */
+  transition: transform 800ms cubic-bezier(0.65, 0, 0.35, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: #fff;
+}
+.auth-split.signup .auth-visual {
+  transform: translateX(40vw);
+}
+.auth-split.signup .auth-pane {
+  transform: translateX(0);
+}
+
+.auth-visual-overlay {
+  position: absolute;
+  left: 48px;
+  bottom: 56px;
+  max-width: 60%;
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.auth-visual-overlay h2 {
+  font-size: 32px;
+  margin: 0 0 8px;
+}
+.auth-visual-overlay p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+/* janela em volta do form (card branco com borda + sombra roxa suave) */
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 32px;
+  background: #fff;
+  border: 1px solid #ececf1;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(60, 40, 120, 0.12);
+}
+.auth-card h1 {
+  margin-top: 0;
+}
+
+/* "link" textual feito com <button> (acessível) */
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--brand-purple);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 860px) {
+  .auth-visual {
+    display: none;
+  }
+  .auth-pane,
+  .auth-split.signup .auth-pane {
+    width: 100vw;
+    transform: none;
+  }
+}
+/* Nota: o slide e o shader NÃO respeitam prefers-reduced-motion aqui — override
+   do Emil pedido explicitamente para esta tela de auth. */
+
+/* Formulários de auth */
+.auth {
+  max-width: 380px;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #444;
+}
+.form input {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  /* só cor/sombra (sem layout) — mantido sob reduced-motion, ajuda compreensão */
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+.form input:focus {
+  outline: none;
+  border-color: var(--brand-purple);
+  box-shadow: 0 0 0 3px var(--brand-tint);
+}
+.error {
+  color: #c0252a;
+  font-size: 14px;
+  margin: 0;
+}
+.muted {
+  color: #666;
+  font-size: 14px;
+  margin-top: 20px;
+}
+.muted a {
+  color: var(--brand-purple);
+  font-weight: 500;
+}
+
+/* ===== Venues: wizard / form / chips / fotos / lista ===== */
+.wizard {
+  max-width: 560px;
+}
+.wizard label,
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 14px;
+}
+.row {
+  display: flex;
+  gap: 14px;
+}
+.row label {
+  flex: 1;
+}
+.field-label {
+  font-size: 14px;
+  color: #444;
+  font-weight: 500;
+  margin: 8px 0;
+}
+textarea {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  resize: vertical;
+  /* só cor/sombra (sem layout) */
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--brand-purple);
+  box-shadow: 0 0 0 3px var(--brand-tint);
+}
+
+/* progresso de passos */
+.steps {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 24px;
+}
+.steps li {
+  flex: 1;
+  font-size: 12px;
+  color: #999;
+  padding-top: 8px;
+  border-top: 2px solid #e5e5e5;
+  transition: color 150ms var(--ease-out), border-color 150ms var(--ease-out);
+}
+.steps li.on,
+.steps li.done {
+  color: var(--brand-purple);
+  border-color: var(--brand-purple);
+}
+
+/* entrada do passo: enter -> ease-out, < 300ms */
+.step {
+  animation: stepIn 220ms var(--ease-out) both;
+}
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wizard-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* variantes de botão */
+.button.ghost {
+  background: #fff;
+  color: #111;
+  border: 1px solid #d4d4d4;
+}
+.button.danger {
+  background: #c0252a;
+}
+
+/* chips de comodidades */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition: background 150ms var(--ease-out), color 150ms var(--ease-out),
+    border-color 150ms var(--ease-out), transform var(--duration-press) var(--ease-out);
+}
+.chip:active {
+  transform: scale(0.97);
+}
+.chip.on {
+  background: var(--brand-purple);
+  color: #fff;
+  border-color: var(--brand-purple);
+}
+
+/* fotos */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+.photo-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photo-del {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform var(--duration-press) var(--ease-out);
+}
+.photo-del:active {
+  transform: scale(0.9);
+}
+.photo-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  border: 1px dashed #c4c4c4;
+  border-radius: 8px;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 150ms var(--ease-out), color 150ms var(--ease-out);
+}
+.photo-add:hover {
+  border-color: #111;
+  color: #111;
+}
+
+/* lista de anúncios */
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.venue-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.venue-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+}
+.venue-actions {
+  display: flex;
+  gap: 8px;
+}
+.badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+.badge.pub {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+.badge.draft {
+  background: #f1f1f1;
+  color: #666;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    animation: none;
+  }
+  .chip:active,
+  .photo-del:active {
+    transform: none;
+  }
+}
+
+/* ===== Home: nav (Dock React Bits) / grid / footer ===== */
+
+/* Dock no topo: o .dock-panel é absolute; .site-nav fixo vira o ancestral
+   posicionado, então reposiciono o painel pro topo (em vez do bottom padrão). */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* clica através do espaço vazio do dock-outer */
+}
+.site-nav .dock-outer {
+  pointer-events: none;
+}
+.site-nav .dock-panel {
+  pointer-events: auto;
+  top: 12px;
+  bottom: auto;
+  /* cores da marca: gradiente roxo→azul (override do dark do React Bits) */
+  background: var(--brand-gradient);
+  border-color: transparent;
+  box-shadow: 0 8px 24px rgba(60, 40, 120, 0.28);
+}
+.site-nav .dock-item {
+  /* itens em vidro fosco sobre o gradiente */
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.site-nav .dock-label {
+  top: auto;
+  bottom: -1.7rem; /* label abaixo (no topo da tela não cabe acima) */
+  background: #fff;
+  color: var(--brand-purple);
+  border-color: rgba(60, 40, 120, 0.15);
+}
+.site-nav .dock-icon {
+  color: #fff;
+}
+
+.home {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 110px 24px 48px; /* topo livre p/ o dock */
+}
+.hero {
+  text-align: center;
+  padding: 16px 0 40px;
+}
+.hero h1 {
+  font-size: 36px;
+  margin: 0 0 12px;
+}
+.hero p {
+  color: #555;
+  font-size: 18px;
+  margin: 0;
+}
+.home-section h2 {
+  font-size: 22px;
+  margin: 0 0 16px;
+}
+
+.venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+.vcard {
+  border: 1px solid #eee;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .vcard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(60, 40, 120, 0.12);
+  }
+}
+.vcard-cover {
+  aspect-ratio: 4 / 3;
+  background: #f3f3f6;
+}
+.vcard-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.vcard-cover-ph {
+  width: 100%;
+  height: 100%;
+  background: var(--brand-gradient);
+  opacity: 0.85;
+}
+.vcard-body {
+  padding: 14px 16px 18px;
+}
+.vcard-body h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+.vcard-price {
+  margin: 10px 0 0;
+  font-weight: 600;
+  font-size: 16px;
+}
+.vcard-price span {
+  font-weight: 400;
+  color: #888;
+  font-size: 13px;
+}
+
+.site-footer {
+  border-top: 1px solid #eee;
+  background: #fff;
+  margin-top: 48px;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.footer-brand {
+  font-size: 18px;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.footer-links {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.footer-links a {
+  color: #444;
+  font-size: 14px;
+}
+.footer-copy {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 24px 32px;
+  color: #999;
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vcard,
+  .vcard:hover {
+    transition: none;
+    transform: none;
+  }
+}
