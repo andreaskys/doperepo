@@ -1104,3 +1104,12 @@ textarea:focus {
   .hpx-row { gap: 1.5rem; margin-bottom: 1.5rem; }
   .hpx-card { height: 14rem; width: 18rem; }
 }
+
+/* ===== Landing — cenas "como funciona" ===== */
+.landing-scenes { position: relative; z-index: 1; }
+.scene { min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+.scene-inner { max-width: 620px; text-align: center; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scene-ico { color: var(--brand-blue); }
+.scene-step { font-size: 13px; letter-spacing: 0.18em; color: rgba(255,255,255,0.55); }
+.scene-title { font-family: var(--font-display, inherit); font-size: clamp(28px, 4vw, 44px); margin: 0; }
+.scene-text { font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.85); margin: 0; }
