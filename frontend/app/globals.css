@@ -1113,3 +1113,11 @@ textarea:focus {
 .scene-step { font-size: 13px; letter-spacing: 0.18em; color: rgba(255,255,255,0.55); }
 .scene-title { font-family: var(--font-display, inherit); font-size: clamp(28px, 4vw, 44px); margin: 0; }
 .scene-text { font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.85); margin: 0; }
+
+/* ===== Landing — wrapper do scroll + CTA final ===== */
+.landing-scroll { background: #11102a; }
+.landing-cta-final {
+  min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; text-align: center; padding: 60px 24px; color: #fff;
+}
+.landing-cta-final h2 { font-family: var(--font-display, inherit); font-size: clamp(26px, 4vw, 44px); margin: 0; }
