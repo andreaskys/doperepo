@@ -33,7 +33,7 @@ export default function SiteNav() {
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
   const [panelPos, setPanelPos] = useState({ left: 0, top: 0 });
-  const panelRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLSpanElement>(null);
   const reduce = useReducedMotion();
 
@@ -64,11 +64,12 @@ export default function SiteNav() {
     };
   }, [pathname]);
 
-  // Clique-fora fecha o painel.
+  // Clique FORA do nav (Dock + painel) fecha. Clicar no próprio sino não conta
+  // como "fora" — assim o onClick do sino alterna sem o handler reabrir.
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
@@ -123,13 +124,12 @@ export default function SiteNav() {
   ];
 
   return (
-    <div className="site-nav">
+    <div className="site-nav" ref={navRef}>
       <Dock items={items} panelHeight={64} baseItemSize={44} magnification={64} dockHeight={140} distance={160} />
       <AnimatePresence>
         {open && loggedIn && (
           <motion.div
             className="notif-panel"
-            ref={panelRef}
             style={{ left: panelPos.left, top: panelPos.top }}
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
