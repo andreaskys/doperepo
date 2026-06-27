@@ -902,7 +902,16 @@ textarea:focus {
      ícone e colapsa de volta. A animação é feita pelo motion (AnimatePresence). */
   transform-origin: top center;
 }
-.notif-head { font-weight: 600; font-size: 14px; margin: 6px 10px 8px; }
+.notif-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 600; font-size: 14px; margin: 6px 10px 8px;
+}
+.notif-clear {
+  font: inherit; font-size: 12px; font-weight: 500;
+  color: var(--brand-purple); background: none; border: none;
+  cursor: pointer; padding: 0;
+}
+@media (hover: hover) and (pointer: fine) { .notif-clear:hover { text-decoration: underline; } }
 .notif-empty { color: #666; font-size: 14px; margin: 12px 10px; }
 .notif-list { list-style: none; margin: 0; padding: 0; }
 .notif-item {

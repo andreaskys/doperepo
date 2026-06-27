@@ -17,3 +17,6 @@ SELECT count(*) FROM notifications WHERE user_id = $1 AND read = false;
 
 -- name: MarkNotificationsRead :exec
 UPDATE notifications SET read = true WHERE user_id = $1 AND read = false;
+
+-- name: DeleteNotificationsByUser :exec
+DELETE FROM notifications WHERE user_id = $1;

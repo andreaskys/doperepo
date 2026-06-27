@@ -190,4 +190,7 @@ export const NotificationsAPI = {
   markRead: async (): Promise<void> => {
     await fetch(`${API}/api/v1/notifications/read`, { method: 'POST', credentials: 'include' });
   },
+  clearAll: async (): Promise<void> => {
+    await fetch(`${API}/api/v1/notifications`, { method: 'DELETE', credentials: 'include' });
+  },
 };

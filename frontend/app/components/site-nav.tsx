@@ -102,6 +102,16 @@ export default function SiteNav() {
     router.push(n.type === 'booking_requested' ? '/reservas/recebidas' : '/reservas');
   }
 
+  async function clearAll() {
+    try {
+      await NotificationsAPI.clearAll();
+      setNotifs([]);
+      setCount(0);
+    } catch {
+      /* ignore */
+    }
+  }
+
   // telas de auth são full-screen (60/40 com a animação) — sem dock nelas
   if (pathname === '/login' || pathname === '/signup') return null;
 
@@ -118,9 +128,8 @@ export default function SiteNav() {
     { icon: <PlusIcon />, label: 'Anunciar', onClick: () => router.push('/venues/new') },
     { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => router.push('/venues/mine') },
     { icon: <CalendarIcon />, label: 'Reservas', onClick: () => router.push('/reservas') },
-    loggedIn
-      ? { icon: bellIcon, label: 'Notificações', onClick: toggleBell }
-      : { icon: <UserIcon />, label: 'Entrar', onClick: () => router.push('/login') },
+    { icon: <UserIcon />, label: 'Entrar / Registrar', onClick: () => router.push('/login') },
+    ...(loggedIn ? [{ icon: bellIcon, label: 'Notificações', onClick: toggleBell }] : []),
   ];
 
   return (
@@ -140,7 +149,12 @@ export default function SiteNav() {
                 : { type: 'spring', stiffness: 260, damping: 26, mass: 1, opacity: { duration: 0.18 } }
             }
           >
-            <p className="notif-head">Notificações</p>
+            <div className="notif-head">
+              <span>Notificações</span>
+              {notifs && notifs.length > 0 && (
+                <button type="button" className="notif-clear" onClick={clearAll}>Limpar tudo</button>
+              )}
+            </div>
             {!notifs ? (
               <p className="notif-empty">Carregando…</p>
             ) : notifs.length === 0 ? (

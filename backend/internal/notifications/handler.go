@@ -19,6 +19,7 @@ func (h *Handler) Routes(rg *gin.RouterGroup, requireAuth gin.HandlerFunc) {
 	g.GET("", h.list)
 	g.GET("/unread-count", h.unreadCount)
 	g.POST("/read", h.markRead)
+	g.DELETE("", h.clearAll)
 }
 
 type notificationResp struct {
@@ -63,6 +64,15 @@ func (h *Handler) unreadCount(c *gin.Context) {
 func (h *Handler) markRead(c *gin.Context) {
 	user := c.MustGet("user").(sqlc.User)
 	if err := h.q.MarkNotificationsRead(c.Request.Context(), user.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) clearAll(c *gin.Context) {
+	user := c.MustGet("user").(sqlc.User)
+	if err := h.q.DeleteNotificationsByUser(c.Request.Context(), user.ID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro"})
 		return
 	}
