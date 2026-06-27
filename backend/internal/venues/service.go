@@ -185,7 +185,20 @@ func toPublicVenues(rows []sqlc.SearchPublishedVenuesRow) []PublicVenue {
 	return out
 }
 
+// isEmpty: nenhum filtro ativo (a listagem sem filtros é a cacheável).
+func (f SearchFilters) isEmpty() bool {
+	return strings.TrimSpace(f.City) == "" && f.MinCapacity == 0 &&
+		strings.TrimSpace(f.MaxPrice) == "" && strings.TrimSpace(f.Query) == "" &&
+		len(f.Amenities) == 0
+}
+
 func (s *Service) Search(ctx context.Context, f SearchFilters) ([]PublicVenue, error) {
+	cacheable := f.isEmpty()
+	if cacheable {
+		if list, ok := s.cachedPublicList(ctx); ok {
+			return list, nil
+		}
+	}
 	params, err := buildSearchParams(f)
 	if err != nil {
 		return nil, err
@@ -194,7 +207,11 @@ func (s *Service) Search(ctx context.Context, f SearchFilters) ([]PublicVenue, e
 	if err != nil {
 		return nil, err
 	}
-	return toPublicVenues(rows), nil
+	list := toPublicVenues(rows)
+	if cacheable {
+		s.cachePublicList(ctx, list)
+	}
+	return list, nil
 }
 
 func (s *Service) Publish(ctx context.Context, id int64) (sqlc.Venue, error) {
