@@ -854,3 +854,28 @@ textarea:focus {
   gap: 10px;
   justify-content: flex-end;
 }
+
+/* --- Abas e badge das reservas --- */
+.reservas-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 20px;
+}
+.reservas-tab {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: #444;
+  border: 1px solid #d4d4d4;
+  transition: background 150ms var(--ease-out), color 150ms var(--ease-out),
+    border-color 150ms var(--ease-out);
+}
+.reservas-tab.on {
+  background: var(--brand-purple);
+  color: #fff;
+  border-color: var(--brand-purple);
+}
+.badge.cancelled {
+  background: #fbeaea;
+  color: #c0252a;
+}
