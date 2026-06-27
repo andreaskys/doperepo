@@ -159,3 +159,35 @@ export const PublicAPI = {
     return res.json();
   },
 };
+
+export type NotificationType = 'booking_requested' | 'booking_confirmed' | 'booking_cancelled';
+
+export interface AppNotification {
+  id: number;
+  type: NotificationType;
+  read: boolean;
+  created_at: string;
+  booking_id: number;
+  venue_title: string;
+  start_date: string;
+  end_date: string;
+}
+
+// Fetch direto (NÃO usa req(): o sino não pode redirecionar pra /login no 401).
+export const NotificationsAPI = {
+  // null = não logado (401); número = contagem de não-lidas.
+  unreadCount: async (): Promise<number | null> => {
+    const res = await fetch(`${API}/api/v1/notifications/unread-count`, { credentials: 'include' });
+    if (res.status === 401) return null;
+    if (!res.ok) throw new Error('erro ao buscar notificações');
+    return (await res.json()).count as number;
+  },
+  list: async (): Promise<AppNotification[]> => {
+    const res = await fetch(`${API}/api/v1/notifications`, { credentials: 'include' });
+    if (!res.ok) throw new Error('erro ao listar notificações');
+    return res.json();
+  },
+  markRead: async (): Promise<void> => {
+    await fetch(`${API}/api/v1/notifications/read`, { method: 'POST', credentials: 'include' });
+  },
+};

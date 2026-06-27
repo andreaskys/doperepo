@@ -41,12 +41,13 @@ func New(deps Deps) *gin.Engine {
 	secure := deps.Cfg.Env == "production"
 	authH := auth.NewHandler(auth.NewService(queries, deps.Redis), secure)
 	venuesH := venues.NewHandler(venues.NewService(queries, deps.Storage, deps.Redis))
-	bookingsH := bookings.NewHandler(bookings.NewService(deps.DB, queries, notifications.NewNotifier(deps.Broker)))
+	bookingsH := bookings.NewHandler(bookings.NewService(deps.DB, queries, notifications.NewNotifier(deps.Broker, queries)))
 
 	api := r.Group("/api/v1")
 	authH.Routes(api)
 	venuesH.Routes(api, authH.RequireAuth())
 	bookingsH.Routes(api, authH.RequireAuth())
+	notifications.NewHandler(queries).Routes(api, authH.RequireAuth())
 
 	return r
 }

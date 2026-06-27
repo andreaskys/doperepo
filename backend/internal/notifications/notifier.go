@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/doperepo/backend/internal/db/sqlc"
 	"github.com/doperepo/backend/internal/platform/rabbitmq"
 )
 
@@ -22,20 +23,37 @@ type Event struct {
 	RecipientID int64     `json:"recipient_id"`
 }
 
-// Notifier publica eventos de reserva na fila (best-effort).
-// pub nil (broker desligado) → no-op.
-type Notifier struct{ pub *rabbitmq.Publisher }
+// Notifier grava a notificação in-app (durável) e publica o e-mail (async).
+// pub nil → sem e-mail; q nil → sem in-app. Ambos best-effort.
+type Notifier struct {
+	pub *rabbitmq.Publisher
+	q   *sqlc.Queries
+}
 
-func NewNotifier(pub *rabbitmq.Publisher) *Notifier { return &Notifier{pub: pub} }
+func NewNotifier(pub *rabbitmq.Publisher, q *sqlc.Queries) *Notifier {
+	return &Notifier{pub: pub, q: q}
+}
 
 func (n *Notifier) BookingRequested(ctx context.Context, bookingID, recipientID int64) {
-	n.emit(ctx, BookingRequested, bookingID, recipientID)
+	n.record(ctx, BookingRequested, bookingID, recipientID)
 }
 func (n *Notifier) BookingConfirmed(ctx context.Context, bookingID, recipientID int64) {
-	n.emit(ctx, BookingConfirmed, bookingID, recipientID)
+	n.record(ctx, BookingConfirmed, bookingID, recipientID)
 }
 func (n *Notifier) BookingCancelled(ctx context.Context, bookingID, recipientID int64) {
-	n.emit(ctx, BookingCancelled, bookingID, recipientID)
+	n.record(ctx, BookingCancelled, bookingID, recipientID)
+}
+
+// record grava a notificação in-app e publica o e-mail (ambos best-effort).
+func (n *Notifier) record(ctx context.Context, t EventType, bookingID, recipientID int64) {
+	if n.q != nil {
+		if err := n.q.CreateNotification(ctx, sqlc.CreateNotificationParams{
+			UserID: recipientID, BookingID: bookingID, Type: string(t),
+		}); err != nil {
+			log.Printf("notif: persist in-app: %v", err)
+		}
+	}
+	n.emit(ctx, t, bookingID, recipientID)
 }
 
 func (n *Notifier) emit(ctx context.Context, t EventType, bookingID, recipientID int64) {
