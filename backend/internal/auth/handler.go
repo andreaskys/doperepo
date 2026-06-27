@@ -1,10 +1,15 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/doperepo/backend/internal/db/sqlc"
 )
@@ -27,6 +32,9 @@ func (h *Handler) Routes(rg *gin.RouterGroup) {
 	rg.POST("/auth/logout", h.logout)
 	rg.GET("/auth/me", h.RequireAuth(), h.me)
 	rg.PATCH("/me/role", h.RequireAuth(), h.setRole)
+	rg.PATCH("/me", h.RequireAuth(), h.updateProfile)
+	rg.POST("/me/avatar", h.RequireAuth(), h.uploadAvatar)
+	rg.POST("/me/password", h.RequireAuth(), h.changePassword)
 }
 
 type registerReq struct {
@@ -108,6 +116,102 @@ func (h *Handler) setRole(c *gin.Context) {
 	c.JSON(http.StatusOK, publicUser(user))
 }
 
+const maxAvatarBytes = 5 << 20 // 5MB
+
+var allowedAvatarTypes = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+	"image/webp": ".webp",
+}
+
+type updateProfileReq struct {
+	Name string `json:"name" binding:"required,min=2"`
+	Bio  string `json:"bio"`
+}
+
+func (h *Handler) updateProfile(c *gin.Context) {
+	var req updateProfileReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	user, err := h.svc.UpdateProfile(c.Request.Context(), currentUser(c).ID, req.Name, req.Bio)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao salvar perfil"})
+		return
+	}
+	c.JSON(http.StatusOK, publicUser(user))
+}
+
+func (h *Handler) uploadAvatar(c *gin.Context) {
+	fh, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "envie o arquivo no campo 'avatar'"})
+		return
+	}
+	if fh.Size > maxAvatarBytes {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "imagem acima de 5MB"})
+		return
+	}
+	ct := fh.Header.Get("Content-Type")
+	ext, ok := allowedAvatarTypes[ct]
+	if !ok {
+		c.JSON(http.StatusUnsupportedMediaType, gin.H{"error": "use jpg, png ou webp"})
+		return
+	}
+	f, err := fh.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao ler arquivo"})
+		return
+	}
+	defer f.Close()
+
+	id := currentUser(c).ID
+	key := fmt.Sprintf("avatars/%d/%s%s", id, randHex(), ext)
+	user, err := h.svc.UploadAvatar(c.Request.Context(), id, key, ct, f, fh.Size)
+	switch {
+	case errors.Is(err, ErrStorageUnavailable):
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		return
+	case err != nil:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao enviar imagem"})
+		return
+	}
+	c.JSON(http.StatusOK, publicUser(user))
+}
+
+type changePasswordReq struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
+}
+
+func (h *Handler) changePassword(c *gin.Context) {
+	var req changePasswordReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	err := h.svc.ChangePassword(c.Request.Context(), currentUser(c).ID, req.CurrentPassword, req.NewPassword)
+	switch {
+	case errors.Is(err, ErrWrongPassword):
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	case errors.Is(err, ErrWeakPassword):
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	case err != nil:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao trocar senha"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func randHex() string {
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
 // RequireAuth carrega o usuário da sessão; 401 se não houver/for inválida.
 func (h *Handler) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -143,12 +247,25 @@ func (h *Handler) clearCookie(c *gin.Context) {
 
 // publicUser nunca expõe o password_hash.
 type publicUserDTO struct {
-	ID    int64  `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	Bio       string `json:"bio"`
+	AvatarURL string `json:"avatar_url"`
+	CreatedAt string `json:"created_at"`
 }
 
 func publicUser(u sqlc.User) publicUserDTO {
-	return publicUserDTO{ID: u.ID, Name: u.Name, Email: u.Email, Role: string(u.Role)}
+	return publicUserDTO{
+		ID: u.ID, Name: u.Name, Email: u.Email, Role: string(u.Role),
+		Bio: u.Bio, AvatarURL: u.AvatarUrl, CreatedAt: tsStr(u.CreatedAt),
+	}
+}
+
+func tsStr(t pgtype.Timestamptz) string {
+	if !t.Valid {
+		return ""
+	}
+	return t.Time.Format(time.RFC3339)
 }

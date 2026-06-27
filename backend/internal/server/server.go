@@ -39,7 +39,7 @@ func New(deps Deps) *gin.Engine {
 
 	queries := sqlc.New(deps.DB)
 	secure := deps.Cfg.Env == "production"
-	authH := auth.NewHandler(auth.NewService(queries, deps.Redis), secure)
+	authH := auth.NewHandler(auth.NewService(queries, deps.Redis, deps.Storage), secure)
 	venuesH := venues.NewHandler(venues.NewService(queries, deps.Storage, deps.Redis))
 	bookingsH := bookings.NewHandler(bookings.NewService(deps.DB, queries, notifications.NewNotifier(deps.Broker, queries)))
 
