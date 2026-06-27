@@ -96,6 +96,44 @@ func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (B
 	return i, err
 }
 
+const getBookingNotificationData = `-- name: GetBookingNotificationData :one
+SELECT v.title AS venue_title, b.start_date, b.end_date, b.total_price,
+       u.name AS recipient_name, u.email AS recipient_email
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+JOIN users u ON u.id = $1
+WHERE b.id = $2
+`
+
+type GetBookingNotificationDataParams struct {
+	RecipientID int64 `json:"recipient_id"`
+	BookingID   int64 `json:"booking_id"`
+}
+
+type GetBookingNotificationDataRow struct {
+	VenueTitle     string         `json:"venue_title"`
+	StartDate      pgtype.Date    `json:"start_date"`
+	EndDate        pgtype.Date    `json:"end_date"`
+	TotalPrice     pgtype.Numeric `json:"total_price"`
+	RecipientName  string         `json:"recipient_name"`
+	RecipientEmail string         `json:"recipient_email"`
+}
+
+// Fatos p/ montar o e-mail (parametrizado por reserva e destinatário).
+func (q *Queries) GetBookingNotificationData(ctx context.Context, arg GetBookingNotificationDataParams) (GetBookingNotificationDataRow, error) {
+	row := q.db.QueryRow(ctx, getBookingNotificationData, arg.RecipientID, arg.BookingID)
+	var i GetBookingNotificationDataRow
+	err := row.Scan(
+		&i.VenueTitle,
+		&i.StartDate,
+		&i.EndDate,
+		&i.TotalPrice,
+		&i.RecipientName,
+		&i.RecipientEmail,
+	)
+	return i, err
+}
+
 const getBookingWithOwner = `-- name: GetBookingWithOwner :one
 SELECT b.id, b.venue_id, b.guest_id, b.status, v.host_id
 FROM bookings b
@@ -297,12 +335,13 @@ func (q *Queries) ListVenueBookedRanges(ctx context.Context, venueID int64) ([]L
 
 const lockVenueForBooking = `-- name: LockVenueForBooking :one
 
-SELECT id, status FROM venues WHERE id = $1 FOR UPDATE
+SELECT id, status, host_id FROM venues WHERE id = $1 FOR UPDATE
 `
 
 type LockVenueForBookingRow struct {
 	ID     int64       `json:"id"`
 	Status VenueStatus `json:"status"`
+	HostID int64       `json:"host_id"`
 }
 
 // Fluxo crítico de reserva. O service roda os 3 primeiros DENTRO de uma única
@@ -315,6 +354,6 @@ type LockVenueForBookingRow struct {
 func (q *Queries) LockVenueForBooking(ctx context.Context, id int64) (LockVenueForBookingRow, error) {
 	row := q.db.QueryRow(ctx, lockVenueForBooking, id)
 	var i LockVenueForBookingRow
-	err := row.Scan(&i.ID, &i.Status)
+	err := row.Scan(&i.ID, &i.Status, &i.HostID)
 	return i, err
 }

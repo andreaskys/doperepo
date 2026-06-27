@@ -6,7 +6,7 @@
 
 -- name: LockVenueForBooking :one
 -- Pessimistic lock: trava a linha do espaço até o fim da tx.
-SELECT id, status FROM venues WHERE id = $1 FOR UPDATE;
+SELECT id, status, host_id FROM venues WHERE id = $1 FOR UPDATE;
 
 -- name: HasOverlappingBooking :one
 SELECT EXISTS (
@@ -66,3 +66,12 @@ JOIN venues v ON v.id = b.venue_id
 JOIN users u ON u.id = b.guest_id
 WHERE v.host_id = $1
 ORDER BY b.created_at DESC;
+
+-- name: GetBookingNotificationData :one
+-- Fatos p/ montar o e-mail (parametrizado por reserva e destinatário).
+SELECT v.title AS venue_title, b.start_date, b.end_date, b.total_price,
+       u.name AS recipient_name, u.email AS recipient_email
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+JOIN users u ON u.id = @recipient_id
+WHERE b.id = @booking_id;
