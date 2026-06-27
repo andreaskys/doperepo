@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/doperepo/backend/internal/config"
+	"github.com/doperepo/backend/internal/db/sqlc"
+	"github.com/doperepo/backend/internal/notifications"
 	"github.com/doperepo/backend/internal/platform/postgres"
 	"github.com/doperepo/backend/internal/platform/rabbitmq"
 	"github.com/doperepo/backend/internal/platform/redis"
@@ -57,6 +59,15 @@ func main() {
 			log.Printf("rabbitmq indisponível, notificações desabilitadas: %v", err)
 		} else {
 			defer broker.Close()
+		}
+	}
+
+	// Worker de notificações — só sobe com broker e SMTP configurados.
+	if broker != nil && cfg.SMTPAddr != "" {
+		if cons, err := notifications.NewConsumer(broker, sqlc.New(db), cfg.SMTPAddr); err != nil {
+			log.Printf("worker de notificações desabilitado: %v", err)
+		} else {
+			cons.Start(ctx)
 		}
 	}
 
