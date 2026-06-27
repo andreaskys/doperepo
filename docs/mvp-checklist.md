@@ -27,7 +27,7 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 - ✅ **Dashboard financeiro (Fase B)** — resumo do host no `/perfil`: cards de KPI (receita confirmada/pendente, reservas, ticket médio, espaços) com count-up + gráfico de receita por mês (SVG/CSS animado). Backend: `GET /host/metrics` (agregação SQL)
 - ✅ **Perfil com sidebar** — `/perfil` reorganizado em menu lateral (Bio · Dashboard · Anúncios · Conta), aba sincronizada com o hash da URL, troca de seção animada + responsivo (abas horizontais no mobile)
 - ✅ **Carrossel hero na home** — banner no topo passando as capas dos anúncios publicados (autoplay 5s/crossfade, pausa no hover, dots/setas, chip clicável → reservar), com fallback pro hero de texto e respeito a `prefers-reduced-motion`
-- 🟡 **Landing imersiva (intro)** — Fase 1 ✅: gating (deslogado/1ª vez via `localStorage`, logado pula), landing full-bleed com carrossel de fundo + botão Entrar, e Dock escondido na intro via context `DockReveal`. **Fase 2 (storytelling parallax + HeroParallax portado) e Fase 3 (queda do Dock) pendentes**
+- 🟡 **Landing imersiva (intro)** — Fase 1 ✅ (gating + landing full-bleed + Dock escondido via `DockReveal`); Fase 2 ✅ (endpoint `GET /public/photos`, **HeroParallax portado pra CSS puro** com fotos dos espaços, 3 cenas "como funciona", CTA "Explorar espaços"). **Fase 3 (app inline no fim + queda do Dock por scroll) pendente**
 
 Cada um tem spec+plano em `docs/superpowers/`.
 
