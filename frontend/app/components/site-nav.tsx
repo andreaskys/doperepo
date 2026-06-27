@@ -130,11 +130,8 @@ export default function SiteNav() {
     { icon: <PlusIcon />, label: 'Anunciar', onClick: () => router.push('/venues/new') },
     { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => router.push('/venues/mine') },
     { icon: <CalendarIcon />, label: 'Reservas', onClick: () => router.push('/reservas') },
-    {
-      icon: loggedIn ? <ProfileIcon /> : <UserIcon />,
-      label: loggedIn ? 'Perfil' : 'Entrar / Registrar',
-      onClick: () => router.push(loggedIn ? '/perfil' : '/login'),
-    },
+    { icon: <UserIcon />, label: 'Entrar / Registrar', onClick: () => router.push('/login') },
+    ...(loggedIn ? [{ icon: <ProfileIcon />, label: 'Perfil', onClick: () => router.push('/perfil') }] : []),
     ...(loggedIn ? [{ icon: bellIcon, label: 'Notificações', onClick: toggleBell }] : []),
   ];
 
