@@ -25,7 +25,6 @@ export default function Landing() {
     if (inView && !revealed.current) {
       revealed.current = true;
       setHidden(false);
-      if (typeof window !== 'undefined') localStorage.setItem('intro_seen', '1');
     }
   }, [inView, setHidden]);
 
@@ -39,7 +38,7 @@ export default function Landing() {
         <div className="landing-inner">
           <h1 className="landing-title">Espaços para eventos inesquecíveis</h1>
           <p className="landing-sub">Encontre, reserve e anuncie — tudo num lugar só.</p>
-          <button type="button" className="button landing-cta" onClick={() => goToApp(false)}>Entrar</button>
+          <button type="button" className="button landing-cta" onClick={() => goToApp(false)}>Ver anúncios</button>
           <span className="landing-hint" aria-hidden="true">role para descobrir ↓</span>
         </div>
       </section>

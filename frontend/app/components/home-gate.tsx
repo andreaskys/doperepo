@@ -14,10 +14,9 @@ export default function HomeGate() {
 
   useEffect(() => {
     let active = true;
-    const seen = typeof window !== 'undefined' && localStorage.getItem('intro_seen');
     AuthAPI.isLoggedIn().then((logged) => {
       if (!active) return;
-      setMode(!logged && !seen ? 'intro' : 'app');
+      setMode(logged ? 'app' : 'intro');
     });
     return () => { active = false; };
   }, []);
