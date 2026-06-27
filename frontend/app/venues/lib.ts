@@ -54,6 +54,12 @@ export interface Booking {
   status: BookingStatus;
 }
 
+export interface ReceivedBooking extends Booking {
+  venue_id: number;
+  guest_name: string;
+  guest_email: string;
+}
+
 export interface BookedRange {
   start_date: string;
   end_date: string;
@@ -109,6 +115,9 @@ export const BookingsAPI = {
   create: (id: string, body: BookingPayload) =>
     req<Booking>(`/venues/${id}/bookings`, { method: 'POST', ...json(body) }),
   mine: () => req<Booking[]>('/bookings'),
+  received: () => req<ReceivedBooking[]>('/bookings/received'),
+  confirm: (id: string) => req<Booking>(`/bookings/${id}/confirm`, { method: 'POST' }),
+  cancel: (id: string) => req<Booking>(`/bookings/${id}/cancel`, { method: 'POST' }),
 };
 
 // Espelha a allowlist do backend (internal/venues/service.go).
