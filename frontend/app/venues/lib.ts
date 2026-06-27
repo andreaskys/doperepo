@@ -126,6 +126,37 @@ export const BookingsAPI = {
   cancel: (id: string) => req<Booking>(`/bookings/${id}/cancel`, { method: 'POST' }),
 };
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  bio: string;
+  avatar_url: string;
+  created_at: string;
+}
+
+export interface ProfileUpdate {
+  name: string;
+  bio: string;
+}
+
+export interface PasswordChange {
+  current_password: string;
+  new_password: string;
+}
+
+export const ProfileAPI = {
+  me: () => req<User>('/auth/me'),
+  updateProfile: (body: ProfileUpdate) => req<User>('/me', { method: 'PATCH', ...json(body) }),
+  changePassword: (body: PasswordChange) => req<null>('/me/password', { method: 'POST', ...json(body) }),
+  uploadAvatar: (file: File) => {
+    const fd = new FormData();
+    fd.append('avatar', file);
+    return req<User>('/me/avatar', { method: 'POST', body: fd });
+  },
+};
+
 // Espelha a allowlist do backend (internal/venues/service.go).
 export const AMENITIES: Amenity[] = [
   { key: 'wifi', label: 'Wi-Fi' },
