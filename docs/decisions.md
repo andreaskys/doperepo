@@ -16,5 +16,6 @@ Por que cada escolha — não o que (o código já mostra o quê).
 | Virar HOST | **Anunciar promove** | Criar o 1º anúncio promove GUEST→HOST (estilo Airbnb), sem passo separado. |
 | `minio-go` | **v7.0.66** | v7.2.0 exige Go 1.25; pinado numa versão compatível com a imagem Go 1.23. |
 | Notificações de reserva | **Evento na fila + worker, best-effort** | `bookings` publica `{type, booking_id, recipient_id}`; worker no pacote `notifications` busca, renderiza e envia via `net/smtp` (Mailpit). Best-effort: a reserva nunca falha pelo e-mail. Retry/DLQ/outbox quando entrega virar garantia. Ver spec `2026-06-26-notificacoes-design`. |
+| Perfil/conta no pacote `auth` | **Estende `auth`, não cria pacote novo** | Perfil é identidade (mesmo `users`/sessão). `auth.Service` ganhou `storage` injetado + `UpdateProfile`/`UploadAvatar`/`ChangePassword`. Avatar reusa o MinIO e a validação das fotos de venue (jpg/png/webp ≤5MB); `avatar_url` guarda a URL pública. Trocar senha exige a senha atual (bcrypt). Slot de conta no Dock alterna **Perfil (logado) / Entrar**. Fase A do perfil; dashboard financeiro é Fase B. Ver spec `2026-06-27-perfil-fase-a-design`. |
 
 Contexto: [[architecture]] · [[mvp-checklist]]

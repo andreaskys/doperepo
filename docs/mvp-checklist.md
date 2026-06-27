@@ -22,6 +22,8 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 - ✅ **Notificações in-app** — sino no Dock (badge, painel animado, limpar tudo)
 - ✅ **Cache Redis** da listagem (cache-aside + invalidação)
 - ✅ **Seed de QA** (`scripts/seed-qa.sh`) com contas, espaços, reservas e capas
+- ✅ **Endereço + mapa** no anúncio (rua/bairro/cidade/UF/complemento + Leaflet) e **busca por CEP** (ViaCEP autofill)
+- ✅ **Perfil & conta (Fase A)** — `/perfil` no Dock: cabeçalho (avatar/role/membro-desde/bio), editar conta (nome/bio, upload de foto, trocar senha) e preview dos anúncios. Backend: `bio`/`avatar_url` + `PATCH /me`, `POST /me/avatar`, `POST /me/password` 🟡 **Fase B (dashboard financeiro) pendente**
 
 Cada um tem spec+plano em `docs/superpowers/`.
 

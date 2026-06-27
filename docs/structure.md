@@ -9,7 +9,7 @@ Cada feature segue o mesmo padrão: `handler.go` (HTTP/gin) → `service.go`
 
 | Pacote | Responsabilidade | Arquivos-chave |
 | --- | --- | --- |
-| `auth` | sessão Redis, register/login/logout/me, roles GUEST/HOST | `auth.go`, `handler.go` |
+| `auth` | sessão Redis, register/login/logout/me, roles GUEST/HOST, **perfil/conta** (bio/avatar via MinIO, trocar senha) | `auth.go`, `handler.go`, `profile_test.go` |
 | `venues` | CRUD, fotos (MinIO), **busca/filtros**, **cache** | `service.go`, `handler.go`, `cache.go` |
 | `bookings` | criar (tx + lock), listar, **ciclo** (confirm/cancel), porta `Notifier` | `service.go`, `lifecycle_test.go` |
 | `notifications` | `Notifier` (in-app+e-mail), `Consumer` (worker SMTP+retry/DLQ), `Handler` (API do sino), `render` | `notifier.go`, `consumer.go`, `handler.go`, `render.go` |
