@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Dock, { type DockItemData } from './Dock';
+import NotificationBell from './notification-bell';
 
 // Ícones inline (sem dep react-icons) — herdam currentColor.
 const Svg = ({ children }: { children: React.ReactNode }) => (
@@ -30,6 +31,7 @@ export default function SiteNav() {
   return (
     <div className="site-nav">
       <Dock items={items} panelHeight={64} baseItemSize={44} magnification={64} dockHeight={140} distance={160} />
+      <NotificationBell />
     </div>
   );
 }
