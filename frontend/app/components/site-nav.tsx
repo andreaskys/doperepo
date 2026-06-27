@@ -119,9 +119,6 @@ export default function SiteNav() {
   // telas de auth são full-screen (60/40 com a animação) — sem dock nelas
   if (pathname === '/login' || pathname === '/signup') return null;
 
-  // intro/landing esconde o Dock até o usuário entrar no app (DockReveal context)
-  if (hidden) return null;
-
   // Sino: ícone com badge, dentro do Dock. Logado → substitui o "Entrar".
   const bellIcon = (
     <span className="dock-bell" ref={bellRef}>
@@ -142,7 +139,14 @@ export default function SiteNav() {
 
   return (
     <div className="site-nav" ref={navRef}>
-      <Dock items={items} panelHeight={64} baseItemSize={44} magnification={64} dockHeight={140} distance={160} />
+      <motion.div
+        initial={false}
+        animate={hidden ? { y: -160, opacity: 0 } : { y: 0, opacity: 1 }}
+        transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 26 }}
+        style={{ pointerEvents: hidden ? 'none' : 'auto' }}
+      >
+        <Dock items={items} panelHeight={64} baseItemSize={44} magnification={64} dockHeight={140} distance={160} />
+      </motion.div>
       <AnimatePresence>
         {open && loggedIn && (
           <motion.div
