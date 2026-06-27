@@ -137,11 +137,14 @@ export default function SiteNav() {
     </span>
   );
 
+  // Rotas que exigem login: deslogado → manda pro /login.
+  const guardedPush = (path: string) => router.push(loggedIn ? path : '/login');
+
   const items: DockItemData[] = [
     { icon: <HomeIcon />, label: 'Home', onClick: () => router.push('/') },
-    { icon: <PlusIcon />, label: 'Anunciar', onClick: () => router.push('/venues/new') },
-    { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => router.push('/venues/mine') },
-    { icon: <CalendarIcon />, label: 'Reservas', onClick: () => router.push('/reservas') },
+    { icon: <PlusIcon />, label: 'Anunciar', onClick: () => guardedPush('/venues/new') },
+    { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => guardedPush('/venues/mine') },
+    { icon: <CalendarIcon />, label: 'Reservas', onClick: () => guardedPush('/reservas') },
     ...(loggedIn
       ? [
           { icon: <ProfileIcon />, label: 'Perfil', onClick: () => router.push('/perfil') },
