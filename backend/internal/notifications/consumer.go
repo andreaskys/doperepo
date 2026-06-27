@@ -3,10 +3,12 @@ package notifications
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"mime"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -19,6 +21,26 @@ const (
 	mailFromAddr   = "no-reply@espacos.local"
 	mailFromHeader = "Espaços <no-reply@espacos.local>"
 )
+
+const (
+	maxAttempts = 3
+	baseBackoff = time.Second
+)
+
+// permanentError marca um erro que não adianta tentar de novo (vai direto à DLQ).
+type permanentError struct{ err error }
+
+func (e permanentError) Error() string { return e.err.Error() }
+func (e permanentError) Unwrap() error { return e.err }
+
+func permanent(err error) error { return permanentError{err} }
+
+func isPermanent(err error) bool {
+	var pe permanentError
+	return errors.As(err, &pe)
+}
+
+func backoff(attempt int) time.Duration { return baseBackoff << (attempt - 1) }
 
 // Consumer lê eventos da fila e envia e-mails (best-effort) via SMTP.
 type Consumer struct {
