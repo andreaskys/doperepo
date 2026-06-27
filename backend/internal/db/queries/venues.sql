@@ -71,3 +71,11 @@ DELETE FROM venue_photos WHERE id = $1;
 
 -- name: ListVenuePhotoKeys :many
 SELECT object_key FROM venue_photos WHERE venue_id = $1;
+
+-- name: ListPublishedPhotos :many
+SELECT p.venue_id, v.title AS venue_title, p.url
+FROM venue_photos p
+JOIN venues v ON v.id = p.venue_id
+WHERE v.status = 'PUBLISHED'
+ORDER BY p.venue_id, p.position
+LIMIT 30;

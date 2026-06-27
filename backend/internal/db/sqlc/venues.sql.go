@@ -181,6 +181,41 @@ func (q *Queries) GetVenuePhoto(ctx context.Context, id int64) (VenuePhoto, erro
 	return i, err
 }
 
+const listPublishedPhotos = `-- name: ListPublishedPhotos :many
+SELECT p.venue_id, v.title AS venue_title, p.url
+FROM venue_photos p
+JOIN venues v ON v.id = p.venue_id
+WHERE v.status = 'PUBLISHED'
+ORDER BY p.venue_id, p.position
+LIMIT 30
+`
+
+type ListPublishedPhotosRow struct {
+	VenueID    int64  `json:"venue_id"`
+	VenueTitle string `json:"venue_title"`
+	Url        string `json:"url"`
+}
+
+func (q *Queries) ListPublishedPhotos(ctx context.Context) ([]ListPublishedPhotosRow, error) {
+	rows, err := q.db.Query(ctx, listPublishedPhotos)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPublishedPhotosRow
+	for rows.Next() {
+		var i ListPublishedPhotosRow
+		if err := rows.Scan(&i.VenueID, &i.VenueTitle, &i.Url); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVenuePhotoKeys = `-- name: ListVenuePhotoKeys :many
 SELECT object_key FROM venue_photos WHERE venue_id = $1
 `

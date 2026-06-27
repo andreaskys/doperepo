@@ -36,6 +36,7 @@ func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) Routes(rg *gin.RouterGroup, requireAuth gin.HandlerFunc) {
 	rg.GET("/public/venues", h.listPublic)      // listagem da home
 	rg.GET("/public/venues/:id", h.getPublic)   // detalhe (tela de reserva)
+	rg.GET("/public/photos", h.listShowcasePhotos) // vitrine da landing (parallax)
 
 	g := rg.Group("/venues", requireAuth)
 	g.GET("", h.listMine)
@@ -126,6 +127,26 @@ func (h *Handler) listPublic(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, list)
+}
+
+type showcasePhotoDTO struct {
+	VenueID int64  `json:"venue_id"`
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+}
+
+// listShowcasePhotos: fotos dos espaços publicados (vitrine parallax da landing).
+func (h *Handler) listShowcasePhotos(c *gin.Context) {
+	rows, err := h.svc.PublishedPhotos(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao listar fotos"})
+		return
+	}
+	out := make([]showcasePhotoDTO, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, showcasePhotoDTO{VenueID: r.VenueID, Title: r.VenueTitle, URL: r.Url})
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // getPublic devolve o detalhe de um anúncio PUBLICADO (tela de reserva, sem auth).

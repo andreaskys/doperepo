@@ -239,6 +239,11 @@ func (s *Service) Photos(ctx context.Context, venueID int64) ([]sqlc.VenuePhoto,
 	return s.q.ListVenuePhotos(ctx, venueID)
 }
 
+// PublishedPhotos lista fotos dos espaços publicados (vitrine da landing).
+func (s *Service) PublishedPhotos(ctx context.Context) ([]sqlc.ListPublishedPhotosRow, error) {
+	return s.q.ListPublishedPhotos(ctx)
+}
+
 // EnsureHost promove o usuário a HOST (idempotente) — chamado ao criar o 1º anúncio.
 func (s *Service) EnsureHost(ctx context.Context, userID int64) error {
 	_, err := s.q.UpdateUserRole(ctx, sqlc.UpdateUserRoleParams{ID: userID, Role: sqlc.UserRoleHOST})
