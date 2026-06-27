@@ -146,6 +146,16 @@ func (s *Service) ListByHost(ctx context.Context, hostID int64) ([]sqlc.ListBook
 	return s.q.ListBookingsByHost(ctx, hostID)
 }
 
+// HostRevenueSummary agrega receita/contagens das reservas dos espaços do host.
+func (s *Service) HostRevenueSummary(ctx context.Context, hostID int64) (sqlc.HostRevenueSummaryRow, error) {
+	return s.q.HostRevenueSummary(ctx, hostID)
+}
+
+// HostRevenueByMonth devolve a receita confirmada por mês (últimos 6 meses).
+func (s *Service) HostRevenueByMonth(ctx context.Context, hostID int64) ([]sqlc.HostRevenueByMonthRow, error) {
+	return s.q.HostRevenueByMonth(ctx, hostID)
+}
+
 // Confirm: host confirma uma reserva PENDING.
 func (s *Service) Confirm(ctx context.Context, bookingID, userID int64) (sqlc.Booking, error) {
 	row, err := s.q.GetBookingWithOwner(ctx, bookingID)

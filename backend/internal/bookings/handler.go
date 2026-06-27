@@ -25,6 +25,7 @@ func (h *Handler) Routes(rg *gin.RouterGroup, requireAuth gin.HandlerFunc) {
 	rg.GET("/bookings/received", requireAuth, h.listReceived)
 	rg.POST("/bookings/:id/confirm", requireAuth, h.confirm)
 	rg.POST("/bookings/:id/cancel", requireAuth, h.cancel)
+	rg.GET("/host/metrics", requireAuth, h.metrics)
 }
 
 type bookingReq struct {
@@ -121,6 +122,70 @@ func (h *Handler) listReceived(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+type monthRevenueResp struct {
+	Month   string `json:"month"`
+	Revenue string `json:"revenue"`
+}
+
+type hostMetricsResp struct {
+	ConfirmedRevenue string             `json:"confirmed_revenue"`
+	PendingRevenue   string             `json:"pending_revenue"`
+	AvgTicket        string             `json:"avg_ticket"`
+	ConfirmedCount   int64              `json:"confirmed_count"`
+	PendingCount     int64              `json:"pending_count"`
+	CancelledCount   int64              `json:"cancelled_count"`
+	TotalBookings    int64              `json:"total_bookings"`
+	ByMonth          []monthRevenueResp `json:"by_month"`
+}
+
+func (h *Handler) metrics(c *gin.Context) {
+	user := c.MustGet("user").(sqlc.User)
+	ctx := c.Request.Context()
+	sum, err := h.svc.HostRevenueSummary(ctx, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao carregar métricas"})
+		return
+	}
+	months, err := h.svc.HostRevenueByMonth(ctx, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao carregar métricas"})
+		return
+	}
+	by := make([]monthRevenueResp, 0, len(months))
+	for _, m := range months {
+		by = append(by, monthRevenueResp{
+			Month:   m.Month.Time.Format("2006-01"),
+			Revenue: priceStr(m.Revenue),
+		})
+	}
+	avg := avgTicket(numericFloat(sum.ConfirmedRevenue), sum.ConfirmedCount)
+	c.JSON(http.StatusOK, hostMetricsResp{
+		ConfirmedRevenue: priceStr(sum.ConfirmedRevenue),
+		PendingRevenue:   priceStr(sum.PendingRevenue),
+		AvgTicket:        strconv.FormatFloat(avg, 'f', 2, 64),
+		ConfirmedCount:   sum.ConfirmedCount,
+		PendingCount:     sum.PendingCount,
+		CancelledCount:   sum.CancelledCount,
+		TotalBookings:    sum.TotalCount,
+		ByMonth:          by,
+	})
+}
+
+func avgTicket(revenue float64, count int64) float64 {
+	if count <= 0 {
+		return 0
+	}
+	return revenue / float64(count)
+}
+
+func numericFloat(n pgtype.Numeric) float64 {
+	f, err := strconv.ParseFloat(priceStr(n), 64)
+	if err != nil {
+		return 0
+	}
+	return f
 }
 
 func (h *Handler) confirm(c *gin.Context) {
