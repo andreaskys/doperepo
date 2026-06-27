@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { ProfileAPI, VenuesAPI, type User, type Venue } from '../venues/lib';
+import { ProfileAPI, VenuesAPI, type User, type Venue, type HostMetrics, type MonthRevenue } from '../venues/lib';
 
 const initial = (name: string) => (name.trim()[0] || '?').toUpperCase();
 const memberSince = (iso: string) => {
@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const reduce = useReducedMotion();
   const [user, setUser] = useState<User | null>(null);
   const [venues, setVenues] = useState<Venue[] | null>(null);
+  const [metrics, setMetrics] = useState<HostMetrics | null>(null);
+  const [metricsErr, setMetricsErr] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -24,6 +26,9 @@ export default function ProfilePage() {
     VenuesAPI.listMine()
       .then(setVenues)
       .catch(() => setVenues([]));
+    ProfileAPI.metrics()
+      .then(setMetrics)
+      .catch(() => setMetricsErr(true));
   }, []);
 
   if (error) return <main className="container"><p className="error">{error}</p></main>;
@@ -50,7 +55,12 @@ export default function ProfilePage() {
         </div>
       </motion.header>
 
-      <EditAccount user={user} onUser={setUser} />
+      <Dashboard
+        metrics={metrics}
+        error={metricsErr}
+        publishedCount={(venues ?? []).filter((v) => v.status === 'PUBLISHED').length}
+        reduce={!!reduce}
+      />
 
       <section className="profile-section">
         <div className="list-head">
@@ -87,6 +97,8 @@ export default function ProfilePage() {
           </div>
         )}
       </section>
+
+      <EditAccount user={user} onUser={setUser} />
     </main>
   );
 }
@@ -173,6 +185,121 @@ function EditAccount({ user, onUser }: { user: User; onUser: (u: User) => void }
         </button>
         {pwdMsg && <span className="muted">{pwdMsg}</span>}
       </div>
+    </section>
+  );
+}
+
+const brl = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const monthLabel = (ym: string) => {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+};
+
+function useCountUp(target: number, reduce: boolean) {
+  const [val, setVal] = useState(reduce ? target : 0);
+  useEffect(() => {
+    if (reduce) { setVal(target); return; }
+    let raf = 0;
+    const start = performance.now();
+    const dur = 600;
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / dur, 1);
+      setVal(target * (1 - Math.pow(1 - p, 3))); // easeOutCubic
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, reduce]);
+  return val;
+}
+
+function KpiValue({ target, format, reduce }: { target: number; format: (n: number) => string; reduce: boolean }) {
+  const v = useCountUp(target, reduce);
+  return <span className="kpi-value">{format(v)}</span>;
+}
+
+function Dashboard({ metrics, error, publishedCount, reduce }: {
+  metrics: HostMetrics | null;
+  error: boolean;
+  publishedCount: number;
+  reduce: boolean;
+}) {
+  if (error) {
+    return (
+      <section className="profile-section dash">
+        <h2>Resumo financeiro</h2>
+        <p className="muted">Não foi possível carregar o resumo financeiro.</p>
+      </section>
+    );
+  }
+  if (!metrics) {
+    return (
+      <section className="profile-section dash">
+        <h2>Resumo financeiro</h2>
+        <p className="muted">Carregando…</p>
+      </section>
+    );
+  }
+
+  const intFmt = (n: number) => String(Math.round(n));
+  const months: MonthRevenue[] = metrics.by_month;
+  const max = months.reduce((acc, m) => Math.max(acc, Number(m.revenue)), 0);
+
+  return (
+    <section className="profile-section dash">
+      <h2>Resumo financeiro</h2>
+      {metrics.total_bookings === 0 ? (
+        <p className="chart-empty">Você ainda não tem reservas — <a href="/venues/new">publique um espaço</a> para começar a faturar.</p>
+      ) : (
+        <>
+          <div className="kpi-grid">
+            <div className="kpi-card feature">
+              <KpiValue target={Number(metrics.confirmed_revenue)} format={brl} reduce={reduce} />
+              <span className="kpi-label">Receita confirmada</span>
+            </div>
+            <div className="kpi-card">
+              <KpiValue target={Number(metrics.pending_revenue)} format={brl} reduce={reduce} />
+              <span className="kpi-label">Pendente (pipeline)</span>
+            </div>
+            <div className="kpi-card">
+              <KpiValue target={metrics.confirmed_count} format={intFmt} reduce={reduce} />
+              <span className="kpi-label">Reservas confirmadas</span>
+            </div>
+            <div className="kpi-card">
+              <KpiValue target={Number(metrics.avg_ticket)} format={brl} reduce={reduce} />
+              <span className="kpi-label">Ticket médio</span>
+            </div>
+            <div className="kpi-card">
+              <KpiValue target={publishedCount} format={intFmt} reduce={reduce} />
+              <span className="kpi-label">Espaços publicados</span>
+            </div>
+          </div>
+
+          {months.length > 0 && (
+            <div className="chart-wrap">
+              <span className="kpi-label">Receita confirmada por mês</span>
+              <div className="chart">
+                {months.map((m, i) => {
+                  const v = Number(m.revenue);
+                  const h = max > 0 ? Math.max(Math.round((v / max) * 100), 2) : 2;
+                  return (
+                    <div className="chart-col" key={m.month} title={brl(v)}>
+                      <motion.div
+                        className="chart-bar"
+                        style={{ height: `${h}%` }}
+                        initial={reduce ? undefined : { scaleY: 0 }}
+                        animate={reduce ? undefined : { scaleY: 1 }}
+                        transition={reduce ? undefined : { duration: 0.4, delay: Math.min(i * 0.06, 0.4) }}
+                      />
+                      <span className="chart-month">{monthLabel(m.month)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }
