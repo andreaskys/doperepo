@@ -27,12 +27,7 @@ export default function HomeGate() {
     return () => setHidden(false);
   }, [mode, setHidden]);
 
-  function enterApp() {
-    if (typeof window !== 'undefined') localStorage.setItem('intro_seen', '1');
-    setMode('app');
-  }
-
   if (mode === 'checking') return <div className="landing-splash" />;
-  if (mode === 'intro') return <Landing onEnter={enterApp} />;
+  if (mode === 'intro') return <Landing />;
   return <AppHome />;
 }

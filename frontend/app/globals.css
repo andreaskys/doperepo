@@ -1121,3 +1121,7 @@ textarea:focus {
   gap: 18px; text-align: center; padding: 60px 24px; color: #fff;
 }
 .landing-cta-final h2 { font-family: var(--font-display, inherit); font-size: clamp(26px, 4vw, 44px); margin: 0; }
+
+/* ===== Landing — app inline (fim da intro) ===== */
+.landing-app { position: relative; z-index: 1; background: #faf9fc; border-radius: 24px 24px 0 0; }
+.landing-app .home { padding-top: 96px; }
