@@ -68,4 +68,14 @@ func TestParseSearchFilters(t *testing.T) {
 	if f.MaxPrice != "" {
 		t.Fatalf("max_price inválido deveria ser vazio, veio %q", f.MaxPrice)
 	}
+
+	// max_price não-finito, negativo ou zero deve virar sentinela ("") — nunca
+	// um filtro ativo (evita 500 no Numeric.Scan e lista vazia surpreendente).
+	for _, bogus := range []string{"-5", "0", "Inf", "+Inf", "NaN", "1e500"} {
+		v := url.Values{}
+		v.Set("max_price", bogus)
+		if got := parseSearchFilters(v).MaxPrice; got != "" {
+			t.Fatalf("max_price=%q deveria virar sentinela, veio %q", bogus, got)
+		}
+	}
 }

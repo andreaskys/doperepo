@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -98,7 +99,9 @@ func parseSearchFilters(q url.Values) SearchFilters {
 		f.MinCapacity = int32(n)
 	}
 	if mp := strings.TrimSpace(q.Get("max_price")); mp != "" {
-		if _, err := strconv.ParseFloat(mp, 64); err == nil {
+		// Só aceita preço finito e positivo; o resto vira sentinela (sem filtro),
+		// para nunca dar 500 no Numeric.Scan nem esvaziar a lista com valor negativo.
+		if v, err := strconv.ParseFloat(mp, 64); err == nil && !math.IsInf(v, 0) && !math.IsNaN(v) && v > 0 {
 			f.MaxPrice = mp
 		}
 	}
