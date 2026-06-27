@@ -22,6 +22,9 @@ func (h *Handler) Routes(rg *gin.RouterGroup, requireAuth gin.HandlerFunc) {
 	rg.GET("/public/venues/:id/booked", h.bookedRanges) // público (date picker)
 	rg.POST("/venues/:id/bookings", requireAuth, h.create)
 	rg.GET("/bookings", requireAuth, h.listMine)
+	rg.GET("/bookings/received", requireAuth, h.listReceived)
+	rg.POST("/bookings/:id/confirm", requireAuth, h.confirm)
+	rg.POST("/bookings/:id/cancel", requireAuth, h.cancel)
 }
 
 type bookingReq struct {
@@ -100,7 +103,84 @@ func (h *Handler) bookedRanges(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+func (h *Handler) listReceived(c *gin.Context) {
+	user := c.MustGet("user").(sqlc.User)
+	rows, err := h.svc.ListByHost(c.Request.Context(), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao listar"})
+		return
+	}
+	out := make([]receivedBookingResp, 0, len(rows))
+	for _, b := range rows {
+		out = append(out, receivedBookingResp{
+			ID: b.ID, VenueID: b.VenueID, VenueTitle: b.VenueTitle,
+			VenueCity: b.VenueCity, VenueState: b.VenueState,
+			GuestName: b.GuestName, GuestEmail: b.GuestEmail,
+			StartDate: dateStr(b.StartDate), EndDate: dateStr(b.EndDate),
+			TotalPrice: priceStr(b.TotalPrice), Status: string(b.Status),
+		})
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+func (h *Handler) confirm(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+		return
+	}
+	user := c.MustGet("user").(sqlc.User)
+	b, err := h.svc.Confirm(c.Request.Context(), id, user.ID)
+	if err != nil {
+		writeBookingErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, bookingDTO(b))
+}
+
+func (h *Handler) cancel(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id inválido"})
+		return
+	}
+	user := c.MustGet("user").(sqlc.User)
+	b, err := h.svc.Cancel(c.Request.Context(), id, user.ID)
+	if err != nil {
+		writeBookingErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, bookingDTO(b))
+}
+
+func writeBookingErr(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, ErrBookingNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	case errors.Is(err, ErrNotAuthorized):
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+	case errors.Is(err, ErrInvalidTransition):
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro interno"})
+	}
+}
+
 // --- DTOs ---
+
+type receivedBookingResp struct {
+	ID         int64  `json:"id"`
+	VenueID    int64  `json:"venue_id"`
+	VenueTitle string `json:"venue_title"`
+	VenueCity  string `json:"venue_city"`
+	VenueState string `json:"venue_state"`
+	GuestName  string `json:"guest_name"`
+	GuestEmail string `json:"guest_email"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
+	TotalPrice string `json:"total_price"`
+	Status     string `json:"status"`
+}
 
 type bookingResp struct {
 	ID         int64  `json:"id"`
