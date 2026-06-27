@@ -1080,3 +1080,27 @@ textarea:focus {
 .landing-hint { margin-top: 18px; font-size: 14px; opacity: 0.85; animation: landing-bounce 1.8s ease-in-out infinite; }
 @keyframes landing-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .landing-hint { animation: none; } }
+
+/* ===== HeroParallax (landing) ===== */
+.hpx {
+  height: 300vh; padding: 10rem 0; overflow: hidden; position: relative;
+  display: flex; flex-direction: column;
+  perspective: 1000px; transform-style: preserve-3d;
+}
+.hpx-header { max-width: 80rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; width: 100%; }
+.hpx-header h1 { font-family: var(--font-display, inherit); font-size: clamp(30px, 5vw, 60px); font-weight: 700; margin: 0; color: #fff; }
+.hpx-header p { max-width: 40rem; font-size: clamp(15px, 2vw, 20px); margin-top: 1.25rem; color: rgba(255,255,255,0.8); }
+.hpx-row { display: flex; gap: 4rem; margin-bottom: 4rem; justify-content: center; }
+.hpx-row.reverse { flex-direction: row-reverse; }
+.hpx-card { height: 24rem; width: 30rem; position: relative; flex-shrink: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.hpx-card a { display: block; height: 100%; }
+.hpx-card img { object-fit: cover; position: absolute; inset: 0; height: 100%; width: 100%; }
+.hpx-card-overlay { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.hpx-card:hover .hpx-card-overlay { opacity: 0.5; }
+.hpx-card-title { position: absolute; bottom: 1rem; left: 1rem; margin: 0; color: #fff; opacity: 0; transition: opacity 0.3s; z-index: 2; }
+.hpx-card:hover .hpx-card-title { opacity: 1; }
+@media (max-width: 760px) {
+  .hpx { height: 200vh; padding: 5rem 0; }
+  .hpx-row { gap: 1.5rem; margin-bottom: 1.5rem; }
+  .hpx-card { height: 14rem; width: 18rem; }
+}
