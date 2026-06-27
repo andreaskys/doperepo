@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { VenuesAPI, AMENITIES, type Photo } from '../../lib';
 import PhotoManager from '../../photo-manager';
 import MapPicker, { type MapSelection } from '../../../components/MapPicker';
+import CepInput from '../../cep-input';
 
 const splitFeatures = (s: string) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -13,6 +14,7 @@ interface EditForm {
   description: string;
   capacity: string;
   price_per_day: string;
+  cep: string;
   address: string;
   neighborhood: string;
   city: string;
@@ -25,7 +27,7 @@ interface EditForm {
 }
 
 // Campos editados via <input>/<textarea>.
-type StringField = 'title' | 'description' | 'capacity' | 'price_per_day' | 'address' | 'neighborhood' | 'city' | 'state' | 'complement' | 'featuresText';
+type StringField = 'title' | 'description' | 'capacity' | 'price_per_day' | 'cep' | 'address' | 'neighborhood' | 'city' | 'state' | 'complement' | 'featuresText';
 
 export default function EditVenuePage() {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +45,7 @@ export default function EditVenuePage() {
           description: v.description,
           capacity: String(v.capacity),
           price_per_day: v.price_per_day,
+          cep: v.cep ?? '',
           address: v.address,
           neighborhood: v.neighborhood ?? '',
           city: v.city,
@@ -103,6 +106,7 @@ export default function EditVenuePage() {
         city: f.city,
         state: f.state,
         complement: f.complement,
+        cep: f.cep,
         amenities: f.amenities,
         features: splitFeatures(f.featuresText),
         latitude: f.latitude !== '' && f.latitude != null ? Number(f.latitude) : null,
@@ -120,6 +124,11 @@ export default function EditVenuePage() {
     <main className="container">
       <h1>Editar anúncio</h1>
       <div className="form">
+        <CepInput
+          cep={f.cep}
+          onCepChange={(c) => setF((s) => (s ? { ...s, cep: c } : s))}
+          onResolve={(r) => setF((s) => (s ? { ...s, address: r.address, neighborhood: r.neighborhood, city: r.city, state: r.state } : s))}
+        />
         <label>Título<input value={f.title} onChange={set('title')} /></label>
         <label>Descrição<textarea value={f.description} onChange={set('description')} rows={4} /></label>
         <div className="row">

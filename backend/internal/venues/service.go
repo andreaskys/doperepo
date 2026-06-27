@@ -55,6 +55,7 @@ type VenueInput struct {
 	City         string
 	State        string
 	Complement   string
+	Cep          string
 	Latitude    *float64
 	Longitude   *float64
 	Amenities   []string
@@ -80,6 +81,7 @@ func (s *Service) Create(ctx context.Context, hostID int64, in VenueInput) (sqlc
 		City:         in.City,
 		State:        in.State,
 		Complement:   in.Complement,
+		Cep:          in.Cep,
 		Latitude:     in.Latitude,
 		Longitude:   in.Longitude,
 		Amenities:   orEmpty(in.Amenities),
@@ -106,6 +108,7 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 		City:         in.City,
 		State:        in.State,
 		Complement:   in.Complement,
+		Cep:          in.Cep,
 		Latitude:     in.Latitude,
 		Longitude:   in.Longitude,
 		Amenities:   orEmpty(in.Amenities),

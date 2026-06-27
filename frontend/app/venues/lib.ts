@@ -20,6 +20,7 @@ export interface Venue {
   city: string;
   state: string;
   complement?: string;
+  cep?: string;
   latitude: number | null;
   longitude: number | null;
   amenities: string[];
@@ -39,6 +40,7 @@ export interface VenuePayload {
   city: string;
   state: string;
   complement?: string;
+  cep?: string;
   amenities: string[];
   features: string[];
   latitude: number | null;
