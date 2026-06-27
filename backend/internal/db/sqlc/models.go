@@ -185,6 +185,7 @@ type Venue struct {
 	Features     []string           `json:"features"`
 	Neighborhood string             `json:"neighborhood"`
 	Complement   string             `json:"complement"`
+	Cep          string             `json:"cep"`
 }
 
 type VenuePhoto struct {
