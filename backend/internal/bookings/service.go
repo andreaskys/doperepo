@@ -19,6 +19,10 @@ var (
 	ErrNotBookable      = errors.New("espaço não está publicado para reserva")
 	ErrInvalidDates     = errors.New("datas inválidas")
 	ErrDatesUnavailable = errors.New("datas indisponíveis para este espaço")
+
+	ErrBookingNotFound   = errors.New("reserva não encontrada")
+	ErrNotAuthorized     = errors.New("ação não permitida")
+	ErrInvalidTransition = errors.New("transição de estado inválida")
 )
 
 type Service struct {
@@ -99,6 +103,76 @@ func (s *Service) ListByGuest(ctx context.Context, guestID int64) ([]sqlc.ListBo
 
 func (s *Service) BookedRanges(ctx context.Context, venueID int64) ([]sqlc.ListVenueBookedRangesRow, error) {
 	return s.q.ListVenueBookedRanges(ctx, venueID)
+}
+
+// bookingAuth carrega só o necessário p/ decidir transições (puro/testável).
+type bookingAuth struct {
+	hostID  int64
+	guestID int64
+	status  sqlc.BookingStatus
+}
+
+func canConfirm(b bookingAuth, userID int64) error {
+	if userID != b.hostID {
+		return ErrNotAuthorized
+	}
+	if b.status != sqlc.BookingStatusPENDING {
+		return ErrInvalidTransition
+	}
+	return nil
+}
+
+func canCancel(b bookingAuth, userID int64) error {
+	if userID != b.hostID && userID != b.guestID {
+		return ErrNotAuthorized
+	}
+	if b.status == sqlc.BookingStatusCANCELLED {
+		return ErrInvalidTransition
+	}
+	return nil
+}
+
+// ListByHost: reservas recebidas nos espaços do host.
+func (s *Service) ListByHost(ctx context.Context, hostID int64) ([]sqlc.ListBookingsByHostRow, error) {
+	return s.q.ListBookingsByHost(ctx, hostID)
+}
+
+// Confirm: host confirma uma reserva PENDING.
+func (s *Service) Confirm(ctx context.Context, bookingID, userID int64) (sqlc.Booking, error) {
+	row, err := s.q.GetBookingWithOwner(ctx, bookingID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return sqlc.Booking{}, ErrBookingNotFound
+	}
+	if err != nil {
+		return sqlc.Booking{}, err
+	}
+	if err := canConfirm(bookingAuth{hostID: row.HostID, guestID: row.GuestID, status: row.Status}, userID); err != nil {
+		return sqlc.Booking{}, err
+	}
+	b, err := s.q.ConfirmBooking(ctx, bookingID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return sqlc.Booking{}, ErrInvalidTransition // estado mudou na corrida
+	}
+	return b, err
+}
+
+// Cancel: host ou convidado cancela (PENDING ou CONFIRMED).
+func (s *Service) Cancel(ctx context.Context, bookingID, userID int64) (sqlc.Booking, error) {
+	row, err := s.q.GetBookingWithOwner(ctx, bookingID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return sqlc.Booking{}, ErrBookingNotFound
+	}
+	if err != nil {
+		return sqlc.Booking{}, err
+	}
+	if err := canCancel(bookingAuth{hostID: row.HostID, guestID: row.GuestID, status: row.Status}, userID); err != nil {
+		return sqlc.Booking{}, err
+	}
+	b, err := s.q.CancelBooking(ctx, bookingID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return sqlc.Booking{}, ErrInvalidTransition
+	}
+	return b, err
 }
 
 // validateStay valida o período e devolve o nº de diárias (puro/testável).
