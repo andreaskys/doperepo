@@ -160,12 +160,39 @@ func buildSearchParams(f SearchFilters) (sqlc.SearchPublishedVenuesParams, error
 
 // Search é a listagem pública da home com filtros opcionais (item #3).
 // ponytail: sem cache ainda. O cache Redis entra quando o tráfego pedir.
-func (s *Service) Search(ctx context.Context, f SearchFilters) ([]sqlc.SearchPublishedVenuesRow, error) {
+// PublicVenue é o card da listagem pública (sem dados sensíveis do host).
+type PublicVenue struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Capacity    int32  `json:"capacity"`
+	PricePerDay string `json:"price_per_day"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	CoverURL    string `json:"cover_url"`
+}
+
+func toPublicVenues(rows []sqlc.SearchPublishedVenuesRow) []PublicVenue {
+	out := make([]PublicVenue, 0, len(rows))
+	for _, v := range rows {
+		out = append(out, PublicVenue{
+			ID: v.ID, Title: v.Title, Description: v.Description, Capacity: v.Capacity,
+			PricePerDay: priceString(v.PricePerDay), City: v.City, State: v.State, CoverURL: v.CoverUrl,
+		})
+	}
+	return out
+}
+
+func (s *Service) Search(ctx context.Context, f SearchFilters) ([]PublicVenue, error) {
 	params, err := buildSearchParams(f)
 	if err != nil {
 		return nil, err
 	}
-	return s.q.SearchPublishedVenues(ctx, params)
+	rows, err := s.q.SearchPublishedVenues(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return toPublicVenues(rows), nil
 }
 
 func (s *Service) Publish(ctx context.Context, id int64) (sqlc.Venue, error) {

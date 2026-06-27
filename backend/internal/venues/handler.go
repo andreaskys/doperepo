@@ -116,19 +116,12 @@ func parseSearchFilters(q url.Values) SearchFilters {
 }
 
 func (h *Handler) listPublic(c *gin.Context) {
-	vs, err := h.svc.Search(c.Request.Context(), parseSearchFilters(c.Request.URL.Query()))
+	list, err := h.svc.Search(c.Request.Context(), parseSearchFilters(c.Request.URL.Query()))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao listar"})
 		return
 	}
-	out := make([]publicVenueResp, 0, len(vs))
-	for _, v := range vs {
-		out = append(out, publicVenueResp{
-			ID: v.ID, Title: v.Title, Description: v.Description, Capacity: v.Capacity,
-			PricePerDay: priceString(v.PricePerDay), City: v.City, State: v.State, CoverURL: v.CoverUrl,
-		})
-	}
-	c.JSON(http.StatusOK, out)
+	c.JSON(http.StatusOK, list)
 }
 
 // getPublic devolve o detalhe de um anúncio PUBLICADO (tela de reserva, sem auth).
@@ -321,18 +314,6 @@ type photoResp struct {
 	ID       int64  `json:"id"`
 	URL      string `json:"url"`
 	Position int32  `json:"position"`
-}
-
-// publicVenueResp é o card da home (sem dados sensíveis do host).
-type publicVenueResp struct {
-	ID          int64  `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Capacity    int32  `json:"capacity"`
-	PricePerDay string `json:"price_per_day"`
-	City        string `json:"city"`
-	State       string `json:"state"`
-	CoverURL    string `json:"cover_url"`
 }
 
 func venueDTO(v sqlc.Venue, photos []sqlc.VenuePhoto) venueResponse {
