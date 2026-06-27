@@ -174,6 +174,18 @@ export const ProfileAPI = {
   },
 };
 
+// Fetch direto (NÃO usa req(): não pode redirecionar pra /login no 401).
+export const AuthAPI = {
+  isLoggedIn: async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API}/api/v1/auth/me`, { credentials: 'include' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+};
+
 // Espelha a allowlist do backend (internal/venues/service.go).
 export const AMENITIES: Amenity[] = [
   { key: 'wifi', label: 'Wi-Fi' },
