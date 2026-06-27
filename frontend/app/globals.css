@@ -1005,3 +1005,53 @@ textarea:focus {
   .pnav-item { white-space: nowrap; }
   .profile-content { margin-left: 0; padding: 20px 20px 40px; }
 }
+
+/* ===== Hero carousel (home) ===== */
+.hero-carousel {
+  position: relative; height: clamp(360px, 56vh, 520px);
+  border-radius: 18px; overflow: hidden; margin-bottom: 40px;
+  background: #11102a;
+}
+.hc-slide { position: absolute; inset: 0; }
+.hc-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hc-scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.6) 100%);
+}
+.hc-overlay {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; color: #fff; padding: 0 24px;
+}
+.hc-overlay h1 { font-size: 38px; margin: 0 0 12px; text-shadow: 0 2px 16px rgba(0,0,0,0.4); }
+.hc-overlay p { font-size: 18px; margin: 0; opacity: 0.95; text-shadow: 0 1px 10px rgba(0,0,0,0.4); }
+.hc-chip {
+  position: absolute; left: 18px; bottom: 18px; z-index: 3;
+  display: inline-flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px; border-radius: 12px;
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+  color: #fff; text-decoration: none;
+}
+.hc-chip-title { font-weight: 600; }
+.hc-chip-cta { font-size: 13px; opacity: 0.9; }
+@media (hover: hover) and (pointer: fine) { .hc-chip:hover { background: rgba(0,0,0,0.6); } }
+.hc-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+  background: rgba(255,255,255,0.85); color: #1f2430; font-size: 22px; line-height: 1;
+  display: grid; place-items: center;
+}
+.hc-arrow.left { left: 14px; }
+.hc-arrow.right { right: 14px; }
+.hc-dots { position: absolute; left: 0; right: 0; bottom: 16px; z-index: 3; display: flex; justify-content: center; gap: 8px; }
+.hc-dots button {
+  width: 9px; height: 9px; border-radius: 50%; border: none; cursor: pointer; padding: 0;
+  background: rgba(255,255,255,0.5);
+}
+.hc-dots button.on { background: #fff; }
+@media (max-width: 640px) {
+  .hero-carousel { height: clamp(260px, 48vh, 360px); }
+  .hc-overlay h1 { font-size: 26px; }
+  .hc-overlay p { font-size: 15px; }
+  .hc-arrow { display: none; }
+}
