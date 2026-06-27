@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { VenuesAPI, AMENITIES, type VenuePayload, type Photo } from '../lib';
 import PhotoManager from '../photo-manager';
 import LocateOnMap from '../locate-on-map';
+import CepInput from '../cep-input';
 
 const STEPS = ['Básico', 'Endereço', 'Mapa', 'Preço', 'Fotos', 'Revisão'];
 const splitFeatures = (s: string) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
@@ -14,6 +15,7 @@ interface VenueForm {
   description: string;
   capacity: string;
   price_per_day: string;
+  cep: string;
   address: string;
   neighborhood: string;
   city: string;
@@ -35,7 +37,7 @@ export default function NewVenuePage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState<VenueForm>({
-    title: '', description: '', capacity: '', price_per_day: '',
+    title: '', description: '', capacity: '', price_per_day: '', cep: '',
     address: '', neighborhood: '', city: '', state: '', complement: '',
     latitude: '', longitude: '', amenities: [], featuresText: '',
   });
@@ -65,6 +67,7 @@ export default function NewVenuePage() {
     city: f.city,
     state: f.state,
     complement: f.complement,
+    cep: f.cep,
     amenities: f.amenities,
     features: splitFeatures(f.featuresText),
     latitude: f.latitude ? Number(f.latitude) : null,
@@ -131,6 +134,11 @@ export default function NewVenuePage() {
         )}
         {step === 1 && (
           <>
+            <CepInput
+              cep={f.cep}
+              onCepChange={(c) => setF((s) => ({ ...s, cep: c }))}
+              onResolve={(r) => setF((s) => ({ ...s, address: r.address, neighborhood: r.neighborhood, city: r.city, state: r.state }))}
+            />
             <label>Rua e número<input value={f.address} onChange={set('address')} placeholder="Ex: Av. das Flores, 100" /></label>
             <label>Bairro<input value={f.neighborhood} onChange={set('neighborhood')} placeholder="Ex: Centro" /></label>
             <div className="row">
