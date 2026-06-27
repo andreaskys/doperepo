@@ -38,3 +38,31 @@ ORDER BY b.created_at DESC;
 SELECT start_date, end_date FROM bookings
 WHERE venue_id = $1 AND status <> 'CANCELLED'
 ORDER BY start_date;
+
+-- name: GetBookingWithOwner :one
+-- Autorização + estado: traz o host_id do venue junto.
+SELECT b.id, b.venue_id, b.guest_id, b.status, v.host_id
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+WHERE b.id = $1;
+
+-- name: ConfirmBooking :one
+UPDATE bookings SET status = 'CONFIRMED'
+WHERE id = $1 AND status = 'PENDING'
+RETURNING *;
+
+-- name: CancelBooking :one
+UPDATE bookings SET status = 'CANCELLED'
+WHERE id = $1 AND status <> 'CANCELLED'
+RETURNING *;
+
+-- name: ListBookingsByHost :many
+SELECT b.id, b.venue_id, b.guest_id, b.start_date, b.end_date, b.total_price,
+       b.status, b.created_at,
+       v.title AS venue_title, v.city AS venue_city, v.state AS venue_state,
+       u.name AS guest_name, u.email AS guest_email
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+JOIN users u ON u.id = b.guest_id
+WHERE v.host_id = $1
+ORDER BY b.created_at DESC;
