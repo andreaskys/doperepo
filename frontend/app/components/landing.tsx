@@ -49,7 +49,6 @@ export default function Landing() {
 
       <section className="landing-cta-final">
         <h2>Pronto pra encontrar seu espaço?</h2>
-        <button type="button" className="button landing-cta" onClick={() => goToApp(true)}>Explorar espaços</button>
       </section>
 
       <div className="landing-app" ref={appRef}>
