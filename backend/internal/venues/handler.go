@@ -58,6 +58,7 @@ type venueReq struct {
 	City         string   `json:"city" binding:"required"`
 	State        string   `json:"state" binding:"required"`
 	Complement   string   `json:"complement"`
+	Cep          string   `json:"cep"`
 	Latitude     *float64 `json:"latitude"`
 	Longitude   *float64 `json:"longitude"`
 	Amenities   []string `json:"amenities"`
@@ -68,7 +69,7 @@ func (r venueReq) toInput() VenueInput {
 	return VenueInput{
 		Title: r.Title, Description: r.Description, Capacity: r.Capacity,
 		Price: r.Price, Address: r.Address, City: r.City, State: r.State,
-		Neighborhood: r.Neighborhood, Complement: r.Complement,
+		Neighborhood: r.Neighborhood, Complement: r.Complement, Cep: r.Cep,
 		Latitude: r.Latitude, Longitude: r.Longitude, Amenities: r.Amenities, Features: r.Features,
 	}
 }
@@ -307,6 +308,7 @@ type venueResponse struct {
 	City         string      `json:"city"`
 	State        string      `json:"state"`
 	Complement   string      `json:"complement"`
+	Cep          string      `json:"cep"`
 	Latitude     *float64    `json:"latitude"`
 	Longitude   *float64    `json:"longitude"`
 	Amenities   []string    `json:"amenities"`
@@ -325,7 +327,7 @@ func venueDTO(v sqlc.Venue, photos []sqlc.VenuePhoto) venueResponse {
 	out := venueResponse{
 		ID: v.ID, HostID: v.HostID, Title: v.Title, Description: v.Description,
 		Capacity: v.Capacity, PricePerDay: priceString(v.PricePerDay), Address: v.Address,
-		Neighborhood: v.Neighborhood, Complement: v.Complement,
+		Neighborhood: v.Neighborhood, Complement: v.Complement, Cep: v.Cep,
 		City: v.City, State: v.State, Latitude: v.Latitude, Longitude: v.Longitude,
 		Amenities: v.Amenities, Features: v.Features, Status: string(v.Status), Photos: []photoResp{},
 	}
