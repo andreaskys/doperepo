@@ -25,13 +25,21 @@ var (
 	ErrInvalidTransition = errors.New("transição de estado inválida")
 )
 
-type Service struct {
-	pool *pgxpool.Pool
-	q    *sqlc.Queries
+// Notifier é a porta best-effort de notificação (impl em internal/notifications).
+type Notifier interface {
+	BookingRequested(ctx context.Context, bookingID, recipientID int64)
+	BookingConfirmed(ctx context.Context, bookingID, recipientID int64)
+	BookingCancelled(ctx context.Context, bookingID, recipientID int64)
 }
 
-func NewService(pool *pgxpool.Pool, q *sqlc.Queries) *Service {
-	return &Service{pool: pool, q: q}
+type Service struct {
+	pool     *pgxpool.Pool
+	q        *sqlc.Queries
+	notifier Notifier
+}
+
+func NewService(pool *pgxpool.Pool, q *sqlc.Queries, notifier Notifier) *Service {
+	return &Service{pool: pool, q: q, notifier: notifier}
 }
 
 // Create executa o fluxo CRÍTICO numa única transação com pessimistic lock:
@@ -94,6 +102,7 @@ func (s *Service) Create(ctx context.Context, venueID, guestID int64, start, end
 	if err := tx.Commit(ctx); err != nil {
 		return sqlc.Booking{}, err
 	}
+	s.notifier.BookingRequested(ctx, booking.ID, venue.HostID)
 	return booking, nil
 }
 
@@ -153,7 +162,11 @@ func (s *Service) Confirm(ctx context.Context, bookingID, userID int64) (sqlc.Bo
 	if errors.Is(err, pgx.ErrNoRows) {
 		return sqlc.Booking{}, ErrInvalidTransition // estado mudou na corrida
 	}
-	return b, err
+	if err != nil {
+		return sqlc.Booking{}, err
+	}
+	s.notifier.BookingConfirmed(ctx, b.ID, row.GuestID)
+	return b, nil
 }
 
 // Cancel: host ou convidado cancela (PENDING ou CONFIRMED).
@@ -172,7 +185,15 @@ func (s *Service) Cancel(ctx context.Context, bookingID, userID int64) (sqlc.Boo
 	if errors.Is(err, pgx.ErrNoRows) {
 		return sqlc.Booking{}, ErrInvalidTransition
 	}
-	return b, err
+	if err != nil {
+		return sqlc.Booking{}, err
+	}
+	recipient := row.GuestID // host cancelou → avisa convidado
+	if userID == row.GuestID {
+		recipient = row.HostID // convidado cancelou → avisa host
+	}
+	s.notifier.BookingCancelled(ctx, b.ID, recipient)
+	return b, nil
 }
 
 // validateStay valida o período e devolve o nº de diárias (puro/testável).
