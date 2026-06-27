@@ -29,7 +29,7 @@ export default function VenueGrid() {
   if (!venues) return <p className="muted">Carregando espaços…</p>;
   if (venues.length === 0) {
     return hasFilters ? (
-      <p className="muted">Nenhum espaço encontrado com esses filtros.</p>
+      <p className="muted">Nenhum espaço encontrado com esses filtros. <a href="/">Limpar filtros</a>.</p>
     ) : (
       <p className="muted">Nenhum espaço publicado ainda. Seja o primeiro a <a href="/venues/new">anunciar</a>.</p>
     );

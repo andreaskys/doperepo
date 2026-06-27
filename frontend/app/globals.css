@@ -815,20 +815,42 @@ textarea:focus {
   }
 }
 
-/* --- Filtros da busca (home) --- */
+/* --- Filtros da busca (home) — painel que rima com os cards (.vcard) --- */
 .venue-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
 }
 .filter-input {
-  flex: 1 1 180px;
-  min-width: 140px;
+  font: inherit;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  background: #fff;
+  /* só cor/sombra (sem layout), mantido sob reduced-motion */
+  transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+.filter-input:focus {
+  outline: none;
+  border-color: var(--brand-purple);
+  box-shadow: 0 0 0 3px var(--brand-tint);
+}
+.venue-filters .field-label {
+  margin: 0;
 }
 .filter-actions {
   display: flex;
-  gap: 0.5rem;
-  flex-basis: 100%;
+  gap: 10px;
+  justify-content: flex-end;
 }

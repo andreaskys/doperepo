@@ -41,10 +41,13 @@ export default function VenueFilters() {
 
   return (
     <form className="venue-filters" onSubmit={submit}>
-      <input className="filter-input" placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-      <input className="filter-input" type="number" min={1} placeholder="Capacidade mín." value={minCapacity} onChange={(e) => setMinCapacity(e.target.value)} />
-      <input className="filter-input" type="number" min={0} step="0.01" placeholder="Preço máx./dia" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
-      <input className="filter-input" placeholder="Título ou descrição" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="filter-grid">
+        <input className="filter-input" placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
+        <input className="filter-input" type="number" min={1} placeholder="Capacidade mín." value={minCapacity} onChange={(e) => setMinCapacity(e.target.value)} />
+        <input className="filter-input" type="number" min={0} step="0.01" placeholder="Preço máx. por dia" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+        <input className="filter-input" placeholder="Nome ou descrição" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      <p className="field-label">Comodidades</p>
       <div className="chips">
         {AMENITIES.map((a) => (
           <button
@@ -58,8 +61,8 @@ export default function VenueFilters() {
         ))}
       </div>
       <div className="filter-actions">
-        <button type="submit" className="button">Buscar</button>
         <button type="button" className="button ghost" onClick={clear}>Limpar filtros</button>
+        <button type="submit" className="button">Buscar</button>
       </div>
     </form>
   );
