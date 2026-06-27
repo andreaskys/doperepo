@@ -184,6 +184,13 @@ export const AuthAPI = {
       return false;
     }
   },
+  logout: async (): Promise<void> => {
+    try {
+      await fetch(`${API}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+    } catch {
+      /* ignore */
+    }
+  },
 };
 
 // Espelha a allowlist do backend (internal/venues/service.go).

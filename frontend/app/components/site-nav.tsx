@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import Dock, { type DockItemData } from './Dock';
 import { useDockReveal } from './dock-reveal';
-import { NotificationsAPI, type AppNotification, type NotificationType } from '../venues/lib';
+import { NotificationsAPI, AuthAPI, type AppNotification, type NotificationType } from '../venues/lib';
 
 // Ícones inline (sem dep react-icons) — herdam currentColor.
 const Svg = ({ children }: { children: React.ReactNode }) => (
@@ -21,6 +21,7 @@ const UserIcon = () => <Svg><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-
 // Perfil: crachá/contato — silhueta distinta do UserIcon (usado no "Entrar").
 const ProfileIcon = () => <Svg><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="M5.5 16.5c.4-1.6 1.8-2.5 3.5-2.5s3.1.9 3.5 2.5" /><path d="M15 9.5h4M15 13h4" /></Svg>;
 const BellIcon = () => <Svg><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></Svg>;
+const LogoutIcon = () => <Svg><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></Svg>;
 
 const NOTIF_LABEL: Record<NotificationType, string> = {
   booking_requested: 'Nova solicitação de reserva',
@@ -116,6 +117,15 @@ export default function SiteNav() {
     }
   }
 
+  async function logout() {
+    await AuthAPI.logout();
+    setLoggedIn(false);
+    setCount(0);
+    setOpen(false);
+    router.push('/');
+    router.refresh();
+  }
+
   // telas de auth são full-screen (60/40 com a animação) — sem dock nelas
   if (pathname === '/login' || pathname === '/signup') return null;
 
@@ -132,9 +142,13 @@ export default function SiteNav() {
     { icon: <PlusIcon />, label: 'Anunciar', onClick: () => router.push('/venues/new') },
     { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => router.push('/venues/mine') },
     { icon: <CalendarIcon />, label: 'Reservas', onClick: () => router.push('/reservas') },
-    { icon: <UserIcon />, label: 'Entrar / Registrar', onClick: () => router.push('/login') },
-    ...(loggedIn ? [{ icon: <ProfileIcon />, label: 'Perfil', onClick: () => router.push('/perfil') }] : []),
-    ...(loggedIn ? [{ icon: bellIcon, label: 'Notificações', onClick: toggleBell }] : []),
+    ...(loggedIn
+      ? [
+          { icon: <ProfileIcon />, label: 'Perfil', onClick: () => router.push('/perfil') },
+          { icon: bellIcon, label: 'Notificações', onClick: toggleBell },
+          { icon: <LogoutIcon />, label: 'Sair', onClick: logout },
+        ]
+      : [{ icon: <UserIcon />, label: 'Entrar / Registrar', onClick: () => router.push('/login') }]),
   ];
 
   return (
