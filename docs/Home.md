@@ -9,6 +9,7 @@ Esta nota é o índice (MOC). O Claude lê estas notas pra ter contexto rápido.
 - [[decisions]] — log de decisões técnicas (o porquê)
 - [[mvp-checklist]] — escopo e status do MVP
 - [[design]] — diretrizes de UI/animação
+- [[plans/README|plans]] — planos de implementação executáveis (`writing-plans`/`executing-plans`)
 
 ## Estado atual
 Fundação no ar: infra (Postgres, Redis, RabbitMQ, MinIO, Mailpit, Adminer) +

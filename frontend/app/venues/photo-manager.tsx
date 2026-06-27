@@ -1,14 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { VenuesAPI } from './lib';
+import { VenuesAPI, type Photo } from './lib';
+
+interface PhotoManagerProps {
+  venueId: string;
+  photos: Photo[];
+  setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
+}
 
 // Upload/listagem/remoção de fotos de uma venue. Sobe uma a uma (até 10).
-export default function PhotoManager({ venueId, photos, setPhotos }) {
+export default function PhotoManager({ venueId, photos, setPhotos }: PhotoManagerProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  async function onPick(e) {
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
     setError('');
@@ -20,19 +26,19 @@ export default function PhotoManager({ venueId, photos, setPhotos }) {
         setPhotos((cur) => [...cur, p]);
       }
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Erro ao enviar foto');
     } finally {
       setBusy(false);
     }
   }
 
-  async function remove(id) {
+  async function remove(id: string) {
     setError('');
     try {
       await VenuesAPI.deletePhoto(venueId, id);
       setPhotos((cur) => cur.filter((p) => p.id !== id));
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Erro ao remover foto');
     }
   }
 

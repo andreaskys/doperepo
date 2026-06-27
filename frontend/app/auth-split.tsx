@@ -8,24 +8,33 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 
 // Const no escopo do módulo: referência estável, senão o useEffect do shader
 // reiniciaria a cada render (ex.: ao digitar no formulário).
-const IRIDESCENCE_COLOR = [0.4, 0.32, 0.7];
+const IRIDESCENCE_COLOR: [number, number, number] = [0.4, 0.32, 0.7];
 
-export default function AuthSplit({ initialMode = 'login' }) {
+type Mode = 'login' | 'signup';
+
+interface AuthForm {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export default function AuthSplit({ initialMode = 'login' }: { initialMode?: Mode }) {
   const router = useRouter();
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState<Mode>(initialMode);
   const isSignup = mode === 'signup';
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState<AuthForm>({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  function switchMode(next) {
+  function switchMode(next: Mode) {
     setError('');
     setMode(next);
   }
 
-  async function onSubmit(e) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -45,7 +54,7 @@ export default function AuthSplit({ initialMode = 'login' }) {
       router.push('/');
       router.refresh();
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Algo deu errado');
     } finally {
       setLoading(false);
     }

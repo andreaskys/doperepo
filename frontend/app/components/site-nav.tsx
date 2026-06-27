@@ -1,10 +1,10 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import Dock from './Dock';
+import Dock, { type DockItemData } from './Dock';
 
 // Ícones inline (sem dep react-icons) — herdam currentColor.
-const Svg = ({ children }) => (
+const Svg = ({ children }: { children: React.ReactNode }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     {children}
   </svg>
@@ -20,7 +20,7 @@ export default function SiteNav() {
   const pathname = usePathname();
   // telas de auth são full-screen (60/40 com a animação) — sem dock nelas
   if (pathname === '/login' || pathname === '/signup') return null;
-  const items = [
+  const items: DockItemData[] = [
     { icon: <HomeIcon />, label: 'Home', onClick: () => router.push('/') },
     { icon: <PlusIcon />, label: 'Anunciar', onClick: () => router.push('/venues/new') },
     { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => router.push('/venues/mine') },

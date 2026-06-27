@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { Venue } from '../venues/lib';
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function VenueGrid() {
-  const [venues, setVenues] = useState(null);
+  const [venues, setVenues] = useState<Venue[] | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -15,7 +16,7 @@ export default function VenueGrid() {
         return r.json();
       })
       .then(setVenues)
-      .catch((e) => setError(e.message));
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Erro ao carregar espaços'));
   }, []);
 
   if (error) return <p className="muted">{error}</p>;

@@ -3,7 +3,7 @@
 Aplicação full-stack que roda localmente via Docker.
 
 ## Stack
-Next.js · Go · PostgreSQL · Redis · RabbitMQ · MinIO
+Next.js (TypeScript) · Go · PostgreSQL · Redis · RabbitMQ · MinIO
 
 ## Pré-requisitos
 - Docker e Docker Compose

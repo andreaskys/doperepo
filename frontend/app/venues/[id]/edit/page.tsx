@@ -2,17 +2,34 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { VenuesAPI, AMENITIES } from '../../lib';
+import { VenuesAPI, AMENITIES, type Photo } from '../../lib';
 import PhotoManager from '../../photo-manager';
-import MapPicker from '../../../components/MapPicker';
+import MapPicker, { type MapSelection } from '../../../components/MapPicker';
 
-const splitFeatures = (s) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+const splitFeatures = (s: string) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+
+interface EditForm {
+  title: string;
+  description: string;
+  capacity: string;
+  price_per_day: string;
+  address: string;
+  city: string;
+  state: string;
+  amenities: string[];
+  latitude: string | number;
+  longitude: string | number;
+  featuresText: string;
+}
+
+// Campos editados via <input>/<textarea>.
+type StringField = 'title' | 'description' | 'capacity' | 'price_per_day' | 'address' | 'city' | 'state' | 'featuresText';
 
 export default function EditVenuePage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [f, setF] = useState(null);
-  const [photos, setPhotos] = useState([]);
+  const [f, setF] = useState<EditForm | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -34,31 +51,41 @@ export default function EditVenuePage() {
         });
         setPhotos(v.photos || []);
       })
-      .catch((e) => setError(e.message));
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Erro ao carregar'));
   }, [id]);
 
   if (error) return <main className="container"><p className="error">{error}</p></main>;
   if (!f) return <main className="container"><p className="muted">Carregando…</p></main>;
 
-  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
-  const toggleAmenity = (k) =>
-    setF((s) => ({
-      ...s,
-      amenities: s.amenities.includes(k) ? s.amenities.filter((a) => a !== k) : [...s.amenities, k],
-    }));
+  const set = (k: StringField) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setF((s) => (s ? { ...s, [k]: e.target.value } : s));
+  const toggleAmenity = (k: string) =>
+    setF((s) =>
+      s
+        ? {
+            ...s,
+            amenities: s.amenities.includes(k) ? s.amenities.filter((a) => a !== k) : [...s.amenities, k],
+          }
+        : s
+    );
 
-  function handleMapSelect({ lat, lng, address, city, state }) {
-    setF((s) => ({
-      ...s,
-      latitude: String(lat),
-      longitude: String(lng),
-      address: address || s.address,
-      city: city || s.city,
-      state: state || s.state,
-    }));
+  function handleMapSelect({ lat, lng, address, city, state }: MapSelection) {
+    setF((s) =>
+      s
+        ? {
+            ...s,
+            latitude: String(lat),
+            longitude: String(lng),
+            address: address || s.address,
+            city: city || s.city,
+            state: state || s.state,
+          }
+        : s
+    );
   }
 
   async function save() {
+    if (!f) return;
     setBusy(true);
     setError('');
     try {
@@ -78,7 +105,7 @@ export default function EditVenuePage() {
       router.push('/venues/mine');
       router.refresh();
     } catch (e) {
-      setError(e.message);
+      setError(e instanceof Error ? e.message : 'Erro ao salvar');
       setBusy(false);
     }
   }

@@ -19,7 +19,7 @@ docker compose up --build
 | adminer   | 8081          | UI do Postgres                     |
 
 ## Tech
-- **Front:** Next.js + React — design em [[design]]
+- **Front:** Next.js + React + **TypeScript** (strict) — design em [[design]]
 - **Back:** Go + Gin, pgx/sqlc — ver [[architecture]]
 - **DB:** PostgreSQL · **Cache:** Redis · **Fila:** RabbitMQ
 

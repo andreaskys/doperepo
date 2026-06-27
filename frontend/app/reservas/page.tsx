@@ -1,16 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BookingsAPI } from '../venues/lib';
+import { BookingsAPI, type Booking, type BookingStatus } from '../venues/lib';
 
-const STATUS_LABEL = { PENDING: 'Pendente', CONFIRMED: 'Confirmada', CANCELLED: 'Cancelada' };
+const STATUS_LABEL: Record<BookingStatus, string> = {
+  PENDING: 'Pendente',
+  CONFIRMED: 'Confirmada',
+  CANCELLED: 'Cancelada',
+};
 
 export default function ReservasPage() {
-  const [bookings, setBookings] = useState(null);
+  const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    BookingsAPI.mine().then(setBookings).catch((e) => setError(e.message));
+    BookingsAPI.mine()
+      .then(setBookings)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Erro ao carregar reservas'));
   }, []);
 
   if (error) return <main className="container"><p className="error">{error}</p></main>;

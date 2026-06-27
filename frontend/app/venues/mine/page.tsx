@@ -1,28 +1,28 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { VenuesAPI } from '../lib';
+import { VenuesAPI, type Venue } from '../lib';
 
 export default function MyVenuesPage() {
-  const [venues, setVenues] = useState(null);
+  const [venues, setVenues] = useState<Venue[] | null>(null);
   const [error, setError] = useState('');
 
   async function load() {
     try {
       setVenues(await VenuesAPI.listMine());
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar anúncios');
     }
   }
   useEffect(() => {
     load();
   }, []);
 
-  async function publish(id) {
+  async function publish(id: string) {
     await VenuesAPI.publish(id);
     load();
   }
-  async function remove(id) {
+  async function remove(id: string) {
     if (!confirm('Excluir este anúncio? As fotos também serão removidas.')) return;
     await VenuesAPI.remove(id);
     load();

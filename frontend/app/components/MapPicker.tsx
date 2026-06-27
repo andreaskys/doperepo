@@ -1,17 +1,32 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { Map as LeafletMap, CircleMarker, LeafletMouseEvent } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const BR_CENTER = [-14.235, -51.925];
+const BR_CENTER: [number, number] = [-14.235, -51.925];
+
+export interface MapSelection {
+  lat: number;
+  lng: number;
+  address?: string;
+  city?: string;
+  state?: string;
+}
+
+interface MapPickerProps {
+  lat: number | null;
+  lng: number | null;
+  onSelect?: (sel: MapSelection) => void;
+}
 
 // Seletor de localização: clica no mapa → marca o ponto e (via Nominatim/OSM)
 // devolve endereço/cidade/UF. ponytail: Leaflet puro, sem react-leaflet (compat
 // com React 19) e sem API key.
-export default function MapPicker({ lat, lng, onSelect }) {
-  const elRef = useRef(null);
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
+export default function MapPicker({ lat, lng, onSelect }: MapPickerProps) {
+  const elRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<CircleMarker | null>(null);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
@@ -30,7 +45,7 @@ export default function MapPicker({ lat, lng, onSelect }) {
         maxZoom: 19,
       }).addTo(map);
 
-      const place = (la, ln) => {
+      const place = (la: number, ln: number) => {
         if (markerRef.current) markerRef.current.setLatLng([la, ln]);
         else
           markerRef.current = L.circleMarker([la, ln], {
@@ -43,10 +58,10 @@ export default function MapPicker({ lat, lng, onSelect }) {
       };
       if (has) place(lat, lng);
 
-      map.on('click', async (e) => {
+      map.on('click', async (e: LeafletMouseEvent) => {
         const { lat: la, lng: ln } = e.latlng;
         place(la, ln);
-        let geo = {};
+        let geo: Partial<MapSelection> = {};
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${la}&lon=${ln}&accept-language=pt-BR`

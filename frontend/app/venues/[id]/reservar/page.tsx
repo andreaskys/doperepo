@@ -3,24 +3,30 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Stepper, { Step } from '../../../components/Stepper';
-import { BookingsAPI, AMENITIES } from '../../lib';
+import { BookingsAPI, AMENITIES, type Venue, type Booking, type BookedRange } from '../../lib';
 
-const AMENITY_LABEL = Object.fromEntries(AMENITIES.map((a) => [a.key, a.label]));
+const AMENITY_LABEL: Record<string, string> = Object.fromEntries(AMENITIES.map((a) => [a.key, a.label]));
+
+interface ReservaResult {
+  ok?: boolean;
+  booking?: Booking;
+  error?: string;
+}
 
 export default function ReservarPage() {
-  const { id } = useParams();
-  const [venue, setVenue] = useState(null);
-  const [booked, setBooked] = useState([]);
+  const { id } = useParams<{ id: string }>();
+  const [venue, setVenue] = useState<Venue | null>(null);
+  const [booked, setBooked] = useState<BookedRange[]>([]);
   const [loadErr, setLoadErr] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [step, setStep] = useState(1);
-  const [result, setResult] = useState(null); // {ok, booking} | {error}
+  const [result, setResult] = useState<ReservaResult | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    BookingsAPI.publicVenue(id).then(setVenue).catch((e) => setLoadErr(e.message));
+    BookingsAPI.publicVenue(id).then(setVenue).catch((e: unknown) => setLoadErr(e instanceof Error ? e.message : 'Erro ao carregar'));
     BookingsAPI.bookedRanges(id).then(setBooked).catch(() => {});
   }, [id]);
 
@@ -28,7 +34,7 @@ export default function ReservarPage() {
   if (!venue) return <main className="container"><p className="muted">Carregando…</p></main>;
 
   const today = new Date().toISOString().slice(0, 10);
-  const nights = start && end ? Math.round((new Date(end) - new Date(start)) / 86400000) : 0;
+  const nights = start && end ? Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) : 0;
   const datesValid = !!start && !!end && nights >= 1 && start >= today;
   const total = (Number(venue.price_per_day) * (nights || 0)).toFixed(2);
   const cover = venue.photos?.[0]?.url;
@@ -39,7 +45,7 @@ export default function ReservarPage() {
       const b = await BookingsAPI.create(id, { start_date: start, end_date: end });
       setResult({ ok: true, booking: b });
     } catch (e) {
-      setResult({ error: e.message });
+      setResult({ error: e instanceof Error ? e.message : 'Erro ao reservar' });
       setAttempt((a) => a + 1);
     } finally {
       setSubmitting(false);
@@ -90,8 +96,8 @@ export default function ReservarPage() {
           {result?.ok ? (
             <div className="booking-done">
               <h2>Reserva solicitada! 🎉</h2>
-              <p>{result.booking.start_date} → {result.booking.end_date} · {nights} diária(s) · <strong>R$ {result.booking.total_price}</strong></p>
-              <p className="muted">Status: <strong>{result.booking.status}</strong>. Acompanhe em <a href="/reservas">Minhas reservas</a>.</p>
+              <p>{result.booking!.start_date} → {result.booking!.end_date} · {nights} diária(s) · <strong>R$ {result.booking!.total_price}</strong></p>
+              <p className="muted">Status: <strong>{result.booking!.status}</strong>. Acompanhe em <a href="/reservas">Minhas reservas</a>.</p>
             </div>
           ) : (
             <>

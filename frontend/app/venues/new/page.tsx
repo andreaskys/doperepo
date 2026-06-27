@@ -2,33 +2,51 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { VenuesAPI, AMENITIES } from '../lib';
+import { VenuesAPI, AMENITIES, type VenuePayload, type Photo } from '../lib';
 import PhotoManager from '../photo-manager';
-import MapPicker from '../../components/MapPicker';
+import MapPicker, { type MapSelection } from '../../components/MapPicker';
 
 const STEPS = ['Básico', 'Localização', 'Preço', 'Fotos', 'Revisão'];
-const splitFeatures = (s) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+const splitFeatures = (s: string) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+
+interface VenueForm {
+  title: string;
+  description: string;
+  capacity: string;
+  price_per_day: string;
+  address: string;
+  city: string;
+  state: string;
+  latitude: string;
+  longitude: string;
+  amenities: string[];
+  featuresText: string;
+}
+
+// Campos do form editados via <input>/<textarea> (todos string).
+type StringField = Exclude<keyof VenueForm, 'amenities'>;
 
 export default function NewVenuePage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [venueId, setVenueId] = useState(null);
-  const [photos, setPhotos] = useState([]);
+  const [venueId, setVenueId] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({
+  const [f, setF] = useState<VenueForm>({
     title: '', description: '', capacity: '', price_per_day: '',
     address: '', city: '', state: '', latitude: '', longitude: '', amenities: [], featuresText: '',
   });
 
-  const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
-  const toggleAmenity = (k) =>
+  const set = (k: StringField) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setF((s) => ({ ...s, [k]: e.target.value }));
+  const toggleAmenity = (k: string) =>
     setF((s) => ({
       ...s,
       amenities: s.amenities.includes(k) ? s.amenities.filter((a) => a !== k) : [...s.amenities, k],
     }));
 
-  function handleMapSelect({ lat, lng, address, city, state }) {
+  function handleMapSelect({ lat, lng, address, city, state }: MapSelection) {
     setF((s) => ({
       ...s,
       latitude: String(lat),
@@ -46,7 +64,7 @@ export default function NewVenuePage() {
     return true;
   };
 
-  const payload = () => ({
+  const payload = (): VenuePayload => ({
     title: f.title,
     description: f.description,
     capacity: Number(f.capacity),
@@ -73,7 +91,7 @@ export default function NewVenuePage() {
           await VenuesAPI.update(venueId, payload());
         }
       } catch (err) {
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Erro ao salvar');
         setBusy(false);
         return;
       }
@@ -87,15 +105,15 @@ export default function NewVenuePage() {
     setStep((s) => Math.max(s - 1, 0));
   };
 
-  async function finish(publish) {
+  async function finish(publish: boolean) {
     setBusy(true);
     setError('');
     try {
-      if (publish) await VenuesAPI.publish(venueId);
+      if (publish && venueId) await VenuesAPI.publish(venueId);
       router.push('/venues/mine');
       router.refresh();
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Erro ao finalizar');
       setBusy(false);
     }
   }
@@ -159,7 +177,7 @@ export default function NewVenuePage() {
         {step === 3 && (
           <>
             <p className="field-label">Fotos do espaço</p>
-            <PhotoManager venueId={venueId} photos={photos} setPhotos={setPhotos} />
+            <PhotoManager venueId={venueId!} photos={photos} setPhotos={setPhotos} />
           </>
         )}
         {step === 4 && (

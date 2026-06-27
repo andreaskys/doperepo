@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -14,5 +15,12 @@
     "ogl": "^1.0.11",
     "react": "19.0.0",
     "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
   }
 }
