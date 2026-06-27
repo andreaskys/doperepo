@@ -921,3 +921,29 @@ textarea:focus {
 }
 @media (hover: hover) and (pointer: fine) { .notif-item:hover { background: #f6f5fb; } }
 .notif-item.unread { background: var(--brand-tint); }
+
+/* ===== Perfil ===== */
+.profile { display: flex; flex-direction: column; gap: 28px; }
+.profile-head { display: flex; gap: 20px; align-items: center; }
+.profile-avatar {
+  width: 88px; height: 88px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  display: grid; place-items: center; color: #fff; font-size: 32px; font-weight: 700;
+  background: var(--brand-gradient);
+}
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-id h1 { margin: 0 0 2px; }
+.profile-meta { display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.profile-bio { margin: 10px 0 0; max-width: 60ch; }
+.profile-section { display: flex; flex-direction: column; gap: 14px; }
+.profile-venues {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+}
+.profile-venues .vcard { text-decoration: none; color: inherit; }
+@media (max-width: 640px) {
+  .profile-head { flex-direction: column; text-align: center; }
+}
+.profile-edit .form { max-width: 460px; }
+.profile-edit .form + .form { margin-top: 20px; }
+.profile-edit h3 { margin: 0 0 4px; }
+.avatar-upload input { margin-top: 6px; }
+.profile-edit input:disabled { opacity: 0.6; cursor: not-allowed; }
