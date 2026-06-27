@@ -880,33 +880,28 @@ textarea:focus {
   color: #c0252a;
 }
 
-/* --- Sino de notificações --- */
-/* pointer-events: auto porque o sino vive dentro do .site-nav (pointer-events:none). */
-.notif-bell { position: fixed; top: 16px; right: 16px; z-index: 60; pointer-events: auto; }
-.notif-trigger {
-  position: relative;
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
-  border-radius: 999px; border: 1px solid #eee; background: #fff; color: #444;
-  cursor: pointer; box-shadow: 0 6px 18px rgba(60, 40, 120, 0.1);
-  transition: transform var(--duration-press) var(--ease-out), color 150ms var(--ease-out);
-}
-.notif-trigger:active { transform: scale(0.95); }
-@media (hover: hover) and (pointer: fine) { .notif-trigger:hover { color: var(--brand-purple); } }
+/* --- Sino de notificações (item do Dock) --- */
+.dock-bell { position: relative; display: inline-flex; }
 .notif-badge {
-  position: absolute; top: -4px; right: -4px;
+  position: absolute; top: -6px; right: -6px;
   min-width: 18px; height: 18px; padding: 0 5px;
   border-radius: 999px; background: var(--brand-purple); color: #fff;
   font-size: 11px; font-weight: 600; display: grid; place-items: center;
 }
+/* Painel ancorado embaixo do sino: left/top vêm via style inline (centro do sino);
+   margin-left: -160px centraliza (largura 320). pointer-events:auto pois o
+   .site-nav é pointer-events:none. */
 .notif-panel {
-  position: absolute; top: calc(100% + 8px); right: 0;
-  width: 320px; max-height: 60vh; overflow-y: auto;
+  position: fixed;
+  width: 320px; margin-left: -160px;
+  max-height: 60vh; overflow-y: auto;
   background: #fff; border: 1px solid #eee; border-radius: 14px;
   box-shadow: 0 16px 40px rgba(60, 40, 120, 0.16); padding: 8px;
-  transform-origin: top right; animation: notif-pop var(--duration-popover) var(--ease-out);
+  pointer-events: auto; z-index: 60;
+  /* origem no topo-centro (logo abaixo do sino): a janela cresce a partir do
+     ícone e colapsa de volta. A animação é feita pelo motion (AnimatePresence). */
+  transform-origin: top center;
 }
-@keyframes notif-pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 .notif-head { font-weight: 600; font-size: 14px; margin: 6px 10px 8px; }
 .notif-empty { color: #666; font-size: 14px; margin: 12px 10px; }
 .notif-list { list-style: none; margin: 0; padding: 0; }
@@ -917,4 +912,3 @@ textarea:focus {
 }
 @media (hover: hover) and (pointer: fine) { .notif-item:hover { background: #f6f5fb; } }
 .notif-item.unread { background: var(--brand-tint); }
-@media (prefers-reduced-motion: reduce) { .notif-panel { animation: none; } }
