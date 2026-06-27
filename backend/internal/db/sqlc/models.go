@@ -165,6 +165,8 @@ type User struct {
 	PasswordHash string             `json:"password_hash"`
 	Role         UserRole           `json:"role"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Bio          string             `json:"bio"`
+	AvatarUrl    string             `json:"avatar_url"`
 }
 
 type Venue struct {
