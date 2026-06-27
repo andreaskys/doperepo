@@ -12,7 +12,7 @@ const memberSince = (iso: string) => {
 };
 
 const NavSvg = ({ children }: { children: React.ReactNode }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
 );
 const BioIcon = () => <NavSvg><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></NavSvg>;
 const ChartIcon = () => <NavSvg><path d="M4 20V4" /><path d="M4 20h16" /><rect x="7" y="11" width="3" height="6" /><rect x="13" y="7" width="3" height="10" /></NavSvg>;
@@ -60,7 +60,7 @@ export default function ProfilePage() {
   if (!user) return <main className="container"><p className="muted">Carregando…</p></main>;
 
   return (
-    <main className="container profile-layout">
+    <main className="profile-layout">
       <aside className="profile-sidebar">
         <div className="profile-mini">
           <div className="profile-avatar sm">
