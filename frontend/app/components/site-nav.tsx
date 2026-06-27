@@ -128,7 +128,11 @@ export default function SiteNav() {
     { icon: <PlusIcon />, label: 'Anunciar', onClick: () => router.push('/venues/new') },
     { icon: <ListIcon />, label: 'Meus anúncios', onClick: () => router.push('/venues/mine') },
     { icon: <CalendarIcon />, label: 'Reservas', onClick: () => router.push('/reservas') },
-    { icon: <UserIcon />, label: 'Entrar / Registrar', onClick: () => router.push('/login') },
+    {
+      icon: <UserIcon />,
+      label: loggedIn ? 'Perfil' : 'Entrar / Registrar',
+      onClick: () => router.push(loggedIn ? '/perfil' : '/login'),
+    },
     ...(loggedIn ? [{ icon: bellIcon, label: 'Notificações', onClick: toggleBell }] : []),
   ];
 
