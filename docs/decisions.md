@@ -15,5 +15,6 @@ Por que cada escolha — não o que (o código já mostra o quê).
 | Comodidades | **Coluna `text[]`** | Lista fixa no front/back. Sem tabelas de join até existir catálogo dinâmico com metadados. |
 | Virar HOST | **Anunciar promove** | Criar o 1º anúncio promove GUEST→HOST (estilo Airbnb), sem passo separado. |
 | `minio-go` | **v7.0.66** | v7.2.0 exige Go 1.25; pinado numa versão compatível com a imagem Go 1.23. |
+| Notificações de reserva | **Evento na fila + worker, best-effort** | `bookings` publica `{type, booking_id, recipient_id}`; worker no pacote `notifications` busca, renderiza e envia via `net/smtp` (Mailpit). Best-effort: a reserva nunca falha pelo e-mail. Retry/DLQ/outbox quando entrega virar garantia. Ver spec `2026-06-26-notificacoes-design`. |
 
 Contexto: [[architecture]] · [[mvp-checklist]]

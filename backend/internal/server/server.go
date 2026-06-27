@@ -11,6 +11,7 @@ import (
 	"github.com/doperepo/backend/internal/bookings"
 	"github.com/doperepo/backend/internal/config"
 	"github.com/doperepo/backend/internal/db/sqlc"
+	"github.com/doperepo/backend/internal/notifications"
 	"github.com/doperepo/backend/internal/platform/rabbitmq"
 	"github.com/doperepo/backend/internal/platform/storage"
 	"github.com/doperepo/backend/internal/venues"
@@ -40,7 +41,7 @@ func New(deps Deps) *gin.Engine {
 	secure := deps.Cfg.Env == "production"
 	authH := auth.NewHandler(auth.NewService(queries, deps.Redis), secure)
 	venuesH := venues.NewHandler(venues.NewService(queries, deps.Storage))
-	bookingsH := bookings.NewHandler(bookings.NewService(deps.DB, queries))
+	bookingsH := bookings.NewHandler(bookings.NewService(deps.DB, queries, notifications.NewNotifier(deps.Broker)))
 
 	api := r.Group("/api/v1")
 	authH.Routes(api)
