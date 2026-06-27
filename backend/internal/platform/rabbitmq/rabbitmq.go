@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -11,11 +12,16 @@ import (
 // notificações de reserva). Outras filas entram conforme a necessidade.
 const NotificationsQueue = "notifications"
 
+// DeadLetterQueue guarda as notificações que não puderam ser processadas
+// (esgotaram retry ou erro permanente), para inspeção/reprocesso manual.
+const DeadLetterQueue = "notifications.dlq"
+
 // Publisher é a fundação de mensageria: detém a conexão + canal e declara as
 // filas. Os use cases injetam isso e chamam Publish para enfileirar trabalho.
 type Publisher struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
+	mu   sync.Mutex
 }
 
 func New(url string) (*Publisher, error) {
@@ -33,12 +39,18 @@ func New(url string) (*Publisher, error) {
 		_ = conn.Close()
 		return nil, fmt.Errorf("declarar fila: %w", err)
 	}
+	if _, err := ch.QueueDeclare(DeadLetterQueue, true, false, false, false, nil); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("declarar DLQ: %w", err)
+	}
 	return &Publisher{conn: conn, ch: ch}, nil
 }
 
 // Publish envia uma mensagem persistente para uma fila. body são bytes crus
 // (JSON na prática).
 func (p *Publisher) Publish(ctx context.Context, queue string, body []byte) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.ch.PublishWithContext(ctx, "", queue, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		Body:         body,
