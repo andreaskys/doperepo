@@ -16,8 +16,10 @@ export interface Venue {
   capacity: number;
   price_per_day: string;
   address: string;
+  neighborhood?: string;
   city: string;
   state: string;
+  complement?: string;
   latitude: number | null;
   longitude: number | null;
   amenities: string[];
@@ -33,8 +35,10 @@ export interface VenuePayload {
   capacity: number;
   price_per_day: string;
   address: string;
+  neighborhood?: string;
   city: string;
   state: string;
+  complement?: string;
   amenities: string[];
   features: string[];
   latitude: number | null;

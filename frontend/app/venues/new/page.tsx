@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VenuesAPI, AMENITIES, type VenuePayload, type Photo } from '../lib';
 import PhotoManager from '../photo-manager';
-import MapPicker, { type MapSelection } from '../../components/MapPicker';
+import LocateOnMap from '../locate-on-map';
 
-const STEPS = ['Básico', 'Localização', 'Preço', 'Fotos', 'Revisão'];
+const STEPS = ['Básico', 'Endereço', 'Mapa', 'Preço', 'Fotos', 'Revisão'];
 const splitFeatures = (s: string) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 interface VenueForm {
@@ -15,15 +15,16 @@ interface VenueForm {
   capacity: string;
   price_per_day: string;
   address: string;
+  neighborhood: string;
   city: string;
   state: string;
+  complement: string;
   latitude: string;
   longitude: string;
   amenities: string[];
   featuresText: string;
 }
 
-// Campos do form editados via <input>/<textarea> (todos string).
 type StringField = Exclude<keyof VenueForm, 'amenities'>;
 
 export default function NewVenuePage() {
@@ -35,7 +36,8 @@ export default function NewVenuePage() {
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState<VenueForm>({
     title: '', description: '', capacity: '', price_per_day: '',
-    address: '', city: '', state: '', latitude: '', longitude: '', amenities: [], featuresText: '',
+    address: '', neighborhood: '', city: '', state: '', complement: '',
+    latitude: '', longitude: '', amenities: [], featuresText: '',
   });
 
   const set = (k: StringField) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -46,21 +48,10 @@ export default function NewVenuePage() {
       amenities: s.amenities.includes(k) ? s.amenities.filter((a) => a !== k) : [...s.amenities, k],
     }));
 
-  function handleMapSelect({ lat, lng, address, city, state }: MapSelection) {
-    setF((s) => ({
-      ...s,
-      latitude: String(lat),
-      longitude: String(lng),
-      address: address || s.address,
-      city: city || s.city,
-      state: state || s.state,
-    }));
-  }
-
   const canNext = () => {
     if (step === 0) return f.title.trim().length >= 3 && Number(f.capacity) > 0;
-    if (step === 1) return f.address && f.city && f.state;
-    if (step === 2) return Number(f.price_per_day) > 0;
+    if (step === 1) return !!(f.address && f.city && f.state);
+    if (step === 3) return Number(f.price_per_day) > 0;
     return true;
   };
 
@@ -70,8 +61,10 @@ export default function NewVenuePage() {
     capacity: Number(f.capacity),
     price_per_day: f.price_per_day,
     address: f.address,
+    neighborhood: f.neighborhood,
     city: f.city,
     state: f.state,
+    complement: f.complement,
     amenities: f.amenities,
     features: splitFeatures(f.featuresText),
     latitude: f.latitude ? Number(f.latitude) : null,
@@ -80,8 +73,8 @@ export default function NewVenuePage() {
 
   async function next() {
     setError('');
-    // ao sair do passo Preço, cria/atualiza o rascunho (precisa do id pras fotos)
-    if (step === 2) {
+    // ao sair do passo Preço (3), cria/atualiza o rascunho (precisa do id pras fotos)
+    if (step === 3) {
       setBusy(true);
       try {
         if (!venueId) {
@@ -138,23 +131,27 @@ export default function NewVenuePage() {
         )}
         {step === 1 && (
           <>
-            <label>Endereço<input value={f.address} onChange={set('address')} placeholder="Rua, número" /></label>
+            <label>Rua e número<input value={f.address} onChange={set('address')} placeholder="Ex: Av. das Flores, 100" /></label>
+            <label>Bairro<input value={f.neighborhood} onChange={set('neighborhood')} placeholder="Ex: Centro" /></label>
             <div className="row">
               <label>Cidade<input value={f.city} onChange={set('city')} /></label>
               <label>Estado<input value={f.state} onChange={set('state')} maxLength={2} placeholder="UF" /></label>
             </div>
-            <p className="field-label">Marque o local no mapa (clica e arrasta pra navegar)</p>
-            <MapPicker
-              lat={f.latitude ? Number(f.latitude) : null}
-              lng={f.longitude ? Number(f.longitude) : null}
-              onSelect={handleMapSelect}
-            />
-            {f.latitude && f.longitude && (
-              <p className="muted">📍 {Number(f.latitude).toFixed(5)}, {Number(f.longitude).toFixed(5)} — clique no mapa pra ajustar</p>
-            )}
+            <label>Complemento<input value={f.complement} onChange={set('complement')} placeholder="Ex: bloco B, sala 2 (opcional)" /></label>
           </>
         )}
         {step === 2 && (
+          <LocateOnMap
+            address={f.address}
+            neighborhood={f.neighborhood}
+            city={f.city}
+            state={f.state}
+            lat={f.latitude}
+            lng={f.longitude}
+            onPick={(la, ln) => setF((s) => ({ ...s, latitude: String(la), longitude: String(ln) }))}
+          />
+        )}
+        {step === 3 && (
           <>
             <label>Preço por dia (R$)<input type="number" min={0} step="0.01" value={f.price_per_day} onChange={set('price_per_day')} /></label>
             <p className="field-label">Comodidades</p>
@@ -174,18 +171,19 @@ export default function NewVenuePage() {
             )}
           </>
         )}
-        {step === 3 && (
+        {step === 4 && (
           <>
             <p className="field-label">Fotos do espaço</p>
             <PhotoManager venueId={venueId!} photos={photos} setPhotos={setPhotos} />
           </>
         )}
-        {step === 4 && (
+        {step === 5 && (
           <div className="review">
             <h2>{f.title}</h2>
             {f.description && <p>{f.description}</p>}
             <p><strong>{f.capacity}</strong> pessoas · <strong>R$ {f.price_per_day}</strong>/dia</p>
-            <p>{f.address} — {f.city}/{f.state}</p>
+            <p>{[f.address, f.neighborhood, f.complement].filter(Boolean).join(' · ')}</p>
+            <p>{f.city}/{f.state}</p>
             <p className="muted">{f.amenities.length} comodidades · {photos.length} fotos</p>
           </div>
         )}
@@ -195,8 +193,8 @@ export default function NewVenuePage() {
 
       <div className="wizard-nav">
         {step > 0 && <button type="button" className="button ghost" onClick={back} disabled={busy}>Voltar</button>}
-        {step < 4 && <button type="button" className="button" onClick={next} disabled={!canNext() || busy}>{busy ? '...' : 'Continuar'}</button>}
-        {step === 4 && (
+        {step < 5 && <button type="button" className="button" onClick={next} disabled={!canNext() || busy}>{busy ? '...' : 'Continuar'}</button>}
+        {step === 5 && (
           <>
             <button type="button" className="button ghost" onClick={() => finish(false)} disabled={busy}>Salvar rascunho</button>
             <button type="button" className="button" onClick={() => finish(true)} disabled={busy}>{busy ? '...' : 'Publicar'}</button>

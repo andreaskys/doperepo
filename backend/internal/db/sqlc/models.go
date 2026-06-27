@@ -168,21 +168,23 @@ type User struct {
 }
 
 type Venue struct {
-	ID          int64              `json:"id"`
-	HostID      int64              `json:"host_id"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Capacity    int32              `json:"capacity"`
-	PricePerDay pgtype.Numeric     `json:"price_per_day"`
-	Address     string             `json:"address"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	City        string             `json:"city"`
-	State       string             `json:"state"`
-	Latitude    *float64           `json:"latitude"`
-	Longitude   *float64           `json:"longitude"`
-	Amenities   []string           `json:"amenities"`
-	Status      VenueStatus        `json:"status"`
-	Features    []string           `json:"features"`
+	ID           int64              `json:"id"`
+	HostID       int64              `json:"host_id"`
+	Title        string             `json:"title"`
+	Description  string             `json:"description"`
+	Capacity     int32              `json:"capacity"`
+	PricePerDay  pgtype.Numeric     `json:"price_per_day"`
+	Address      string             `json:"address"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	City         string             `json:"city"`
+	State        string             `json:"state"`
+	Latitude     *float64           `json:"latitude"`
+	Longitude    *float64           `json:"longitude"`
+	Amenities    []string           `json:"amenities"`
+	Status       VenueStatus        `json:"status"`
+	Features     []string           `json:"features"`
+	Neighborhood string             `json:"neighborhood"`
+	Complement   string             `json:"complement"`
 }
 
 type VenuePhoto struct {

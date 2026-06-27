@@ -46,13 +46,15 @@ func NewService(q *sqlc.Queries, store *storage.Client, redis *goredis.Client) *
 }
 
 type VenueInput struct {
-	Title       string
-	Description string
-	Capacity    int32
-	Price       string
-	Address     string
-	City        string
-	State       string
+	Title        string
+	Description  string
+	Capacity     int32
+	Price        string
+	Address      string
+	Neighborhood string
+	City         string
+	State        string
+	Complement   string
 	Latitude    *float64
 	Longitude   *float64
 	Amenities   []string
@@ -73,10 +75,12 @@ func (s *Service) Create(ctx context.Context, hostID int64, in VenueInput) (sqlc
 		Description: in.Description,
 		Capacity:    in.Capacity,
 		PricePerDay: price,
-		Address:     in.Address,
-		City:        in.City,
-		State:       in.State,
-		Latitude:    in.Latitude,
+		Address:      in.Address,
+		Neighborhood: in.Neighborhood,
+		City:         in.City,
+		State:        in.State,
+		Complement:   in.Complement,
+		Latitude:     in.Latitude,
 		Longitude:   in.Longitude,
 		Amenities:   orEmpty(in.Amenities),
 		Features:    normFeatures(in.Features),
@@ -97,10 +101,12 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 		Description: in.Description,
 		Capacity:    in.Capacity,
 		PricePerDay: price,
-		Address:     in.Address,
-		City:        in.City,
-		State:       in.State,
-		Latitude:    in.Latitude,
+		Address:      in.Address,
+		Neighborhood: in.Neighborhood,
+		City:         in.City,
+		State:        in.State,
+		Complement:   in.Complement,
+		Latitude:     in.Latitude,
 		Longitude:   in.Longitude,
 		Amenities:   orEmpty(in.Amenities),
 		Features:    normFeatures(in.Features),

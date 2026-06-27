@@ -14,8 +14,10 @@ interface EditForm {
   capacity: string;
   price_per_day: string;
   address: string;
+  neighborhood: string;
   city: string;
   state: string;
+  complement: string;
   amenities: string[];
   latitude: string | number;
   longitude: string | number;
@@ -23,7 +25,7 @@ interface EditForm {
 }
 
 // Campos editados via <input>/<textarea>.
-type StringField = 'title' | 'description' | 'capacity' | 'price_per_day' | 'address' | 'city' | 'state' | 'featuresText';
+type StringField = 'title' | 'description' | 'capacity' | 'price_per_day' | 'address' | 'neighborhood' | 'city' | 'state' | 'complement' | 'featuresText';
 
 export default function EditVenuePage() {
   const { id } = useParams<{ id: string }>();
@@ -42,8 +44,10 @@ export default function EditVenuePage() {
           capacity: String(v.capacity),
           price_per_day: v.price_per_day,
           address: v.address,
+          neighborhood: v.neighborhood ?? '',
           city: v.city,
           state: v.state,
+          complement: v.complement ?? '',
           amenities: v.amenities || [],
           latitude: v.latitude ?? '',
           longitude: v.longitude ?? '',
@@ -95,8 +99,10 @@ export default function EditVenuePage() {
         capacity: Number(f.capacity),
         price_per_day: f.price_per_day,
         address: f.address,
+        neighborhood: f.neighborhood,
         city: f.city,
         state: f.state,
+        complement: f.complement,
         amenities: f.amenities,
         features: splitFeatures(f.featuresText),
         latitude: f.latitude !== '' && f.latitude != null ? Number(f.latitude) : null,
@@ -120,11 +126,13 @@ export default function EditVenuePage() {
           <label>Capacidade<input type="number" min={1} value={f.capacity} onChange={set('capacity')} /></label>
           <label>Preço/dia (R$)<input type="number" min={0} step="0.01" value={f.price_per_day} onChange={set('price_per_day')} /></label>
         </div>
-        <label>Endereço<input value={f.address} onChange={set('address')} /></label>
+        <label>Rua e número<input value={f.address} onChange={set('address')} /></label>
+        <label>Bairro<input value={f.neighborhood} onChange={set('neighborhood')} /></label>
         <div className="row">
           <label>Cidade<input value={f.city} onChange={set('city')} /></label>
           <label>Estado<input value={f.state} onChange={set('state')} maxLength={2} /></label>
         </div>
+        <label>Complemento<input value={f.complement} onChange={set('complement')} placeholder="opcional" /></label>
         <p className="field-label">Local no mapa</p>
         <MapPicker
           lat={f.latitude !== '' ? Number(f.latitude) : null}

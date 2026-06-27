@@ -1,0 +1,3 @@
+ALTER TABLE venues
+    ADD COLUMN neighborhood TEXT NOT NULL DEFAULT '',
+    ADD COLUMN complement   TEXT NOT NULL DEFAULT '';
