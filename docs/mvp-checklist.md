@@ -26,6 +26,7 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 - ✅ **Perfil & conta (Fase A)** — `/perfil` no Dock: cabeçalho (avatar/role/membro-desde/bio), editar conta (nome/bio, upload de foto, trocar senha) e preview dos anúncios. Backend: `bio`/`avatar_url` + `PATCH /me`, `POST /me/avatar`, `POST /me/password`
 - ✅ **Dashboard financeiro (Fase B)** — resumo do host no `/perfil`: cards de KPI (receita confirmada/pendente, reservas, ticket médio, espaços) com count-up + gráfico de receita por mês (SVG/CSS animado). Backend: `GET /host/metrics` (agregação SQL)
 - ✅ **Perfil com sidebar** — `/perfil` reorganizado em menu lateral (Bio · Dashboard · Anúncios · Conta), aba sincronizada com o hash da URL, troca de seção animada + responsivo (abas horizontais no mobile)
+- ✅ **Carrossel hero na home** — banner no topo passando as capas dos anúncios publicados (autoplay 5s/crossfade, pausa no hover, dots/setas, chip clicável → reservar), com fallback pro hero de texto e respeito a `prefers-reduced-motion`
 
 Cada um tem spec+plano em `docs/superpowers/`.
 
