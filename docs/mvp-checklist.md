@@ -15,5 +15,16 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 - Conexões Go + `/health` + graceful shutdown ([[architecture]])
 - Schema das 3 tabelas + trava anti-overbooking
 
-## Próximo
-Reserva (tx pgx) **ou** auth+sessão. Pendente de escolha.
+## Pós-MVP entregue (extras)
+- ✅ **Migração TypeScript** do frontend (strict) + `CLAUDE.md` e fluxo superpowers
+- ✅ **Ciclo de reserva completo** — host confirma/recusa, ambos cancelam, `/reservas/recebidas`
+- ✅ **Notificações por e-mail** (RabbitMQ → worker → Mailpit) com **retry 3× + DLQ**
+- ✅ **Notificações in-app** — sino no Dock (badge, painel animado, limpar tudo)
+- ✅ **Cache Redis** da listagem (cache-aside + invalidação)
+- ✅ **Seed de QA** (`scripts/seed-qa.sh`) com contas, espaços, reservas e capas
+
+Cada um tem spec+plano em `docs/superpowers/`.
+
+## Futuro (anotado, fora de escopo até aqui)
+Tempo real (SSE) no sino · testes de frontend · reset de senha/verificação de
+e-mail · paginação/ordenação na busca · cache de buscas filtradas · re-drive da DLQ.
