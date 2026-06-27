@@ -47,6 +47,7 @@ func New(deps Deps) *gin.Engine {
 	authH.Routes(api)
 	venuesH.Routes(api, authH.RequireAuth())
 	bookingsH.Routes(api, authH.RequireAuth())
+	notifications.NewHandler(queries).Routes(api, authH.RequireAuth())
 
 	return r
 }
