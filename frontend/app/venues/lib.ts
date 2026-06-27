@@ -210,6 +210,12 @@ export interface VenueSearchParams {
   amenities?: string[];
 }
 
+export interface ShowcasePhoto {
+  venue_id: number;
+  title: string;
+  url: string;
+}
+
 // Endpoint público (sem auth) — não passa pelo req()/401.
 export const PublicAPI = {
   searchVenues: async (params: VenueSearchParams): Promise<Venue[]> => {
@@ -223,6 +229,15 @@ export const PublicAPI = {
     const res = await fetch(`${API}/api/v1/public/venues${query ? `?${query}` : ''}`);
     if (!res.ok) throw new Error('Erro ao carregar espaços');
     return res.json();
+  },
+  showcasePhotos: async (): Promise<ShowcasePhoto[]> => {
+    try {
+      const res = await fetch(`${API}/api/v1/public/photos`);
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
   },
 };
 
