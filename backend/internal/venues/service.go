@@ -91,7 +91,7 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 	if err := validateAmenities(in.Amenities); err != nil {
 		return sqlc.Venue{}, err
 	}
-	return s.q.UpdateVenue(ctx, sqlc.UpdateVenueParams{
+	v, err := s.q.UpdateVenue(ctx, sqlc.UpdateVenueParams{
 		ID:          id,
 		Title:       in.Title,
 		Description: in.Description,
@@ -105,6 +105,10 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 		Amenities:   orEmpty(in.Amenities),
 		Features:    normFeatures(in.Features),
 	})
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return v, err
 }
 
 func (s *Service) Get(ctx context.Context, id int64) (sqlc.Venue, error) {
@@ -215,7 +219,11 @@ func (s *Service) Search(ctx context.Context, f SearchFilters) ([]PublicVenue, e
 }
 
 func (s *Service) Publish(ctx context.Context, id int64) (sqlc.Venue, error) {
-	return s.q.PublishVenue(ctx, id)
+	v, err := s.q.PublishVenue(ctx, id)
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return v, err
 }
 
 func (s *Service) Photos(ctx context.Context, venueID int64) ([]sqlc.VenuePhoto, error) {
@@ -237,7 +245,11 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 			}
 		}
 	}
-	return s.q.DeleteVenue(ctx, id)
+	err := s.q.DeleteVenue(ctx, id)
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return err
 }
 
 // AddPhoto sobe o arquivo no MinIO e registra a linha (posição = nº atual de fotos).
@@ -256,12 +268,16 @@ func (s *Service) AddPhoto(ctx context.Context, venueID int64, key, contentType 
 	if err != nil {
 		return sqlc.VenuePhoto{}, err
 	}
-	return s.q.AddVenuePhoto(ctx, sqlc.AddVenuePhotoParams{
+	photo, err := s.q.AddVenuePhoto(ctx, sqlc.AddVenuePhotoParams{
 		VenueID:   venueID,
 		ObjectKey: key,
 		Url:       url,
 		Position:  int32(len(existing)),
 	})
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return photo, err
 }
 
 // DeletePhoto remove a foto (verifica que pertence à venue informada).
@@ -276,7 +292,11 @@ func (s *Service) DeletePhoto(ctx context.Context, venueID, photoID int64) error
 	if s.store != nil {
 		_ = s.store.Delete(ctx, photo.ObjectKey)
 	}
-	return s.q.DeleteVenuePhoto(ctx, photoID)
+	err = s.q.DeleteVenuePhoto(ctx, photoID)
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return err
 }
 
 func parsePrice(s string) (pgtype.Numeric, error) {
