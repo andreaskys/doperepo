@@ -1,27 +1,39 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Venue } from '../venues/lib';
-
-const API = process.env.NEXT_PUBLIC_API_URL;
+import { useSearchParams } from 'next/navigation';
+import { PublicAPI, type Venue } from '../venues/lib';
 
 export default function VenueGrid() {
+  const params = useSearchParams();
   const [venues, setVenues] = useState<Venue[] | null>(null);
   const [error, setError] = useState('');
 
+  const hasFilters = params.toString().length > 0;
+
   useEffect(() => {
-    fetch(API + '/api/v1/public/venues')
-      .then((r) => {
-        if (!r.ok) throw new Error('Erro ao carregar espaços');
-        return r.json();
-      })
+    setVenues(null);
+    setError('');
+    PublicAPI.searchVenues({
+      city: params.get('city') ?? undefined,
+      minCapacity: params.get('min_capacity') ? Number(params.get('min_capacity')) : undefined,
+      maxPrice: params.get('max_price') ? Number(params.get('max_price')) : undefined,
+      q: params.get('q') ?? undefined,
+      amenities: (params.get('amenities') ?? '').split(',').map((a) => a.trim()).filter(Boolean),
+    })
       .then(setVenues)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Erro ao carregar espaços'));
-  }, []);
+  }, [params]);
 
   if (error) return <p className="muted">{error}</p>;
   if (!venues) return <p className="muted">Carregando espaços…</p>;
-  if (venues.length === 0) return <p className="muted">Nenhum espaço publicado ainda. Seja o primeiro a <a href="/venues/new">anunciar</a>.</p>;
+  if (venues.length === 0) {
+    return hasFilters ? (
+      <p className="muted">Nenhum espaço encontrado com esses filtros.</p>
+    ) : (
+      <p className="muted">Nenhum espaço publicado ainda. Seja o primeiro a <a href="/venues/new">anunciar</a>.</p>
+    );
+  }
 
   return (
     <section className="venue-grid">
