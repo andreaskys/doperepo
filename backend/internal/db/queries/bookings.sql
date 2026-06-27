@@ -75,3 +75,27 @@ FROM bookings b
 JOIN venues v ON v.id = b.venue_id
 JOIN users u ON u.id = @recipient_id
 WHERE b.id = @booking_id;
+
+-- name: HostRevenueSummary :one
+SELECT
+  COALESCE(SUM(b.total_price) FILTER (WHERE b.status = 'CONFIRMED'), 0)::numeric AS confirmed_revenue,
+  COALESCE(SUM(b.total_price) FILTER (WHERE b.status = 'PENDING'),   0)::numeric AS pending_revenue,
+  COUNT(*) FILTER (WHERE b.status = 'CONFIRMED') AS confirmed_count,
+  COUNT(*) FILTER (WHERE b.status = 'PENDING')   AS pending_count,
+  COUNT(*) FILTER (WHERE b.status = 'CANCELLED') AS cancelled_count,
+  COUNT(*)                                       AS total_count
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+WHERE v.host_id = @host_id;
+
+-- name: HostRevenueByMonth :many
+SELECT
+  date_trunc('month', b.start_date)::date AS month,
+  COALESCE(SUM(b.total_price) FILTER (WHERE b.status = 'CONFIRMED'), 0)::numeric AS revenue
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+WHERE v.host_id = @host_id
+  AND b.status <> 'CANCELLED'
+  AND b.start_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '5 months'
+GROUP BY 1
+ORDER BY 1;

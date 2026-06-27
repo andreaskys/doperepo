@@ -185,6 +185,80 @@ func (q *Queries) HasOverlappingBooking(ctx context.Context, arg HasOverlappingB
 	return overlaps, err
 }
 
+const hostRevenueByMonth = `-- name: HostRevenueByMonth :many
+SELECT
+  date_trunc('month', b.start_date)::date AS month,
+  COALESCE(SUM(b.total_price) FILTER (WHERE b.status = 'CONFIRMED'), 0)::numeric AS revenue
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+WHERE v.host_id = $1
+  AND b.status <> 'CANCELLED'
+  AND b.start_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '5 months'
+GROUP BY 1
+ORDER BY 1
+`
+
+type HostRevenueByMonthRow struct {
+	Month   pgtype.Date    `json:"month"`
+	Revenue pgtype.Numeric `json:"revenue"`
+}
+
+func (q *Queries) HostRevenueByMonth(ctx context.Context, hostID int64) ([]HostRevenueByMonthRow, error) {
+	rows, err := q.db.Query(ctx, hostRevenueByMonth, hostID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []HostRevenueByMonthRow
+	for rows.Next() {
+		var i HostRevenueByMonthRow
+		if err := rows.Scan(&i.Month, &i.Revenue); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const hostRevenueSummary = `-- name: HostRevenueSummary :one
+SELECT
+  COALESCE(SUM(b.total_price) FILTER (WHERE b.status = 'CONFIRMED'), 0)::numeric AS confirmed_revenue,
+  COALESCE(SUM(b.total_price) FILTER (WHERE b.status = 'PENDING'),   0)::numeric AS pending_revenue,
+  COUNT(*) FILTER (WHERE b.status = 'CONFIRMED') AS confirmed_count,
+  COUNT(*) FILTER (WHERE b.status = 'PENDING')   AS pending_count,
+  COUNT(*) FILTER (WHERE b.status = 'CANCELLED') AS cancelled_count,
+  COUNT(*)                                       AS total_count
+FROM bookings b
+JOIN venues v ON v.id = b.venue_id
+WHERE v.host_id = $1
+`
+
+type HostRevenueSummaryRow struct {
+	ConfirmedRevenue pgtype.Numeric `json:"confirmed_revenue"`
+	PendingRevenue   pgtype.Numeric `json:"pending_revenue"`
+	ConfirmedCount   int64          `json:"confirmed_count"`
+	PendingCount     int64          `json:"pending_count"`
+	CancelledCount   int64          `json:"cancelled_count"`
+	TotalCount       int64          `json:"total_count"`
+}
+
+func (q *Queries) HostRevenueSummary(ctx context.Context, hostID int64) (HostRevenueSummaryRow, error) {
+	row := q.db.QueryRow(ctx, hostRevenueSummary, hostID)
+	var i HostRevenueSummaryRow
+	err := row.Scan(
+		&i.ConfirmedRevenue,
+		&i.PendingRevenue,
+		&i.ConfirmedCount,
+		&i.PendingCount,
+		&i.CancelledCount,
+		&i.TotalCount,
+	)
+	return i, err
+}
+
 const listBookingsByGuest = `-- name: ListBookingsByGuest :many
 SELECT b.id, b.venue_id, b.guest_id, b.start_date, b.end_date, b.total_price, b.status, b.created_at,
        v.title AS venue_title, v.city AS venue_city, v.state AS venue_state
