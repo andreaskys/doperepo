@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -14,6 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/doperepo/backend/internal/db/sqlc"
+	"github.com/doperepo/backend/internal/platform/storage"
 )
 
 // ponytail: TTL fixo de sessão e prefixo de chave. Vira config quando alguém
@@ -24,17 +26,21 @@ const (
 )
 
 var (
-	ErrEmailTaken   = errors.New("e-mail já cadastrado")
-	ErrInvalidLogin = errors.New("credenciais inválidas")
+	ErrEmailTaken         = errors.New("e-mail já cadastrado")
+	ErrInvalidLogin       = errors.New("credenciais inválidas")
+	ErrWrongPassword      = errors.New("senha atual incorreta")
+	ErrWeakPassword       = errors.New("a nova senha precisa ter ao menos 8 caracteres")
+	ErrStorageUnavailable = errors.New("armazenamento indisponível")
 )
 
 type Service struct {
 	q     *sqlc.Queries
 	redis *goredis.Client
+	store *storage.Client // pode ser nil se o MinIO não subiu
 }
 
-func NewService(q *sqlc.Queries, r *goredis.Client) *Service {
-	return &Service{q: q, redis: r}
+func NewService(q *sqlc.Queries, r *goredis.Client, store *storage.Client) *Service {
+	return &Service{q: q, redis: r, store: store}
 }
 
 // Register cria um GUEST, abre sessão e retorna (user, token de sessão).
@@ -114,4 +120,47 @@ func randomToken() (string, error) {
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+func validateNewPassword(s string) error {
+	if len(s) < 8 {
+		return ErrWeakPassword
+	}
+	return nil
+}
+
+// UpdateProfile altera nome e bio do usuário.
+func (s *Service) UpdateProfile(ctx context.Context, id int64, name, bio string) (sqlc.User, error) {
+	return s.q.UpdateUserProfile(ctx, sqlc.UpdateUserProfileParams{ID: id, Name: name, Bio: bio})
+}
+
+// UploadAvatar envia a imagem ao storage e grava a URL pública no usuário.
+func (s *Service) UploadAvatar(ctx context.Context, id int64, key, contentType string, r io.Reader, size int64) (sqlc.User, error) {
+	if s.store == nil {
+		return sqlc.User{}, ErrStorageUnavailable
+	}
+	url, err := s.store.Upload(ctx, key, contentType, r, size)
+	if err != nil {
+		return sqlc.User{}, err
+	}
+	return s.q.UpdateUserAvatar(ctx, sqlc.UpdateUserAvatarParams{ID: id, AvatarUrl: url})
+}
+
+// ChangePassword confere a senha atual via bcrypt e grava o novo hash.
+func (s *Service) ChangePassword(ctx context.Context, id int64, current, next string) error {
+	if err := validateNewPassword(next); err != nil {
+		return err
+	}
+	user, err := s.q.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(current)) != nil {
+		return ErrWrongPassword
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(next), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash senha: %w", err)
+	}
+	return s.q.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{ID: id, PasswordHash: string(hash)})
 }
