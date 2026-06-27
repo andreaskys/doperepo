@@ -27,7 +27,7 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 - ✅ **Dashboard financeiro (Fase B)** — resumo do host no `/perfil`: cards de KPI (receita confirmada/pendente, reservas, ticket médio, espaços) com count-up + gráfico de receita por mês (SVG/CSS animado). Backend: `GET /host/metrics` (agregação SQL)
 - ✅ **Perfil com sidebar** — `/perfil` reorganizado em menu lateral (Bio · Dashboard · Anúncios · Conta), aba sincronizada com o hash da URL, troca de seção animada + responsivo (abas horizontais no mobile)
 - ✅ **Carrossel hero na home** — banner no topo passando as capas dos anúncios publicados (autoplay 5s/crossfade, pausa no hover, dots/setas, chip clicável → reservar), com fallback pro hero de texto e respeito a `prefers-reduced-motion`
-- 🟡 **Landing imersiva (intro)** — Fase 1 ✅ (gating + landing full-bleed + Dock escondido via `DockReveal`); Fase 2 ✅ (endpoint `GET /public/photos`, **HeroParallax portado pra CSS puro** com fotos dos espaços, 3 cenas "como funciona", CTA "Explorar espaços"). **Fase 3 (app inline no fim + queda do Dock por scroll) pendente**
+- ✅ **Landing imersiva (intro)** — experiência só pra deslogado/1ª vez (gating via `localStorage` + `DockReveal` context). **F1**: landing full-bleed com carrossel de fundo + Dock escondido. **F2**: endpoint `GET /public/photos`, **HeroParallax portado pra CSS puro** (fotos dos espaços), 3 cenas "como funciona". **F3**: app (busca/grid) **inline** no fim; ao rolar até ele o **Dock cai do topo** (`useInView` → `DockReveal`), grava `intro_seen` e o app funciona normal. Logado/retornante vai direto pro `AppHome`. Tudo respeita `prefers-reduced-motion`.
 
 Cada um tem spec+plano em `docs/superpowers/`.
 
