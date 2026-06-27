@@ -12,9 +12,11 @@ Esta nota é o índice (MOC). O Claude lê estas notas pra ter contexto rápido.
 - [[plans/README|plans]] — planos de implementação executáveis (`writing-plans`/`executing-plans`)
 
 ## Estado atual
-Fundação no ar: infra (Postgres, Redis, RabbitMQ, MinIO, Mailpit, Adminer) +
-conexões Go com arquitetura limpa. **Features ainda não implementadas.**
+MVP funcional. Infra + auth/sessão Redis, CRUD de espaços com fotos (MinIO),
+listagem pública com **busca/filtros**, **ciclo de reserva completo** (host
+aprova/recusa, ambos cancelam) e **notificações por e-mail** (RabbitMQ → worker
+→ Mailpit). Stack em TypeScript no front. Ver [[mvp-checklist]].
 
 ## Próximo passo
-Escolher: **fluxo de reserva** (tx pgx: lock → check → insert) ou
-**auth + sessão Redis**. Ver [[mvp-checklist]].
+Pendências menores: cache Redis na listagem; e melhorias de robustez das
+notificações (retry/DLQ). Ver [[mvp-checklist]].
