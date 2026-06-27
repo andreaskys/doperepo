@@ -134,7 +134,11 @@ export default function SiteNav() {
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{ duration: reduce ? 0 : 0.24, ease: [0.23, 1, 0.32, 1] }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : { type: 'spring', stiffness: 260, damping: 26, mass: 1, opacity: { duration: 0.18 } }
+            }
           >
             <p className="notif-head">Notificações</p>
             {!notifs ? (
