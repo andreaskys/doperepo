@@ -146,10 +146,27 @@ export interface PasswordChange {
   new_password: string;
 }
 
+export interface MonthRevenue {
+  month: string;
+  revenue: string;
+}
+
+export interface HostMetrics {
+  confirmed_revenue: string;
+  pending_revenue: string;
+  avg_ticket: string;
+  confirmed_count: number;
+  pending_count: number;
+  cancelled_count: number;
+  total_bookings: number;
+  by_month: MonthRevenue[];
+}
+
 export const ProfileAPI = {
   me: () => req<User>('/auth/me'),
   updateProfile: (body: ProfileUpdate) => req<User>('/me', { method: 'PATCH', ...json(body) }),
   changePassword: (body: PasswordChange) => req<null>('/me/password', { method: 'POST', ...json(body) }),
+  metrics: () => req<HostMetrics>('/host/metrics'),
   uploadAvatar: (file: File) => {
     const fd = new FormData();
     fd.append('avatar', file);
