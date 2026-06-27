@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import Dock, { type DockItemData } from './Dock';
+import { useDockReveal } from './dock-reveal';
 import { NotificationsAPI, type AppNotification, type NotificationType } from '../venues/lib';
 
 // Ícones inline (sem dep react-icons) — herdam currentColor.
@@ -38,6 +39,7 @@ export default function SiteNav() {
   const navRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLSpanElement>(null);
   const reduce = useReducedMotion();
+  const { hidden } = useDockReveal();
 
   // Poll do unread-count (também detecta login: 401 → deslogado).
   useEffect(() => {
@@ -116,6 +118,9 @@ export default function SiteNav() {
 
   // telas de auth são full-screen (60/40 com a animação) — sem dock nelas
   if (pathname === '/login' || pathname === '/signup') return null;
+
+  // intro/landing esconde o Dock até o usuário entrar no app (DockReveal context)
+  if (hidden) return null;
 
   // Sino: ícone com badge, dentro do Dock. Logado → substitui o "Entrar".
   const bellIcon = (

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google';
 import './globals.css';
 import SiteNav from './components/site-nav';
+import { DockRevealProvider } from './components/dock-reveal';
 
 // Corpo/UI: sans moderna com personalidade. Títulos: serifa suave (clima de evento).
 const sans = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
@@ -16,8 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={`${sans.variable} ${display.variable}`}>
       <body>
-        <SiteNav />
-        {children}
+        <DockRevealProvider>
+          <SiteNav />
+          {children}
+        </DockRevealProvider>
       </body>
     </html>
   );
