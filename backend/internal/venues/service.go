@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/doperepo/backend/internal/db/sqlc"
 	"github.com/doperepo/backend/internal/platform/storage"
@@ -37,10 +38,11 @@ var allowedAmenities = map[string]bool{
 type Service struct {
 	q     *sqlc.Queries
 	store *storage.Client // pode ser nil se o MinIO não subiu
+	redis *goredis.Client
 }
 
-func NewService(q *sqlc.Queries, store *storage.Client) *Service {
-	return &Service{q: q, store: store}
+func NewService(q *sqlc.Queries, store *storage.Client, redis *goredis.Client) *Service {
+	return &Service{q: q, store: store, redis: redis}
 }
 
 type VenueInput struct {
