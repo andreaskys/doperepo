@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/doperepo/backend/internal/db/sqlc"
 	"github.com/doperepo/backend/internal/platform/storage"
@@ -37,10 +38,11 @@ var allowedAmenities = map[string]bool{
 type Service struct {
 	q     *sqlc.Queries
 	store *storage.Client // pode ser nil se o MinIO não subiu
+	redis *goredis.Client
 }
 
-func NewService(q *sqlc.Queries, store *storage.Client) *Service {
-	return &Service{q: q, store: store}
+func NewService(q *sqlc.Queries, store *storage.Client, redis *goredis.Client) *Service {
+	return &Service{q: q, store: store, redis: redis}
 }
 
 type VenueInput struct {
@@ -89,7 +91,7 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 	if err := validateAmenities(in.Amenities); err != nil {
 		return sqlc.Venue{}, err
 	}
-	return s.q.UpdateVenue(ctx, sqlc.UpdateVenueParams{
+	v, err := s.q.UpdateVenue(ctx, sqlc.UpdateVenueParams{
 		ID:          id,
 		Title:       in.Title,
 		Description: in.Description,
@@ -103,6 +105,10 @@ func (s *Service) Update(ctx context.Context, id int64, in VenueInput) (sqlc.Ven
 		Amenities:   orEmpty(in.Amenities),
 		Features:    normFeatures(in.Features),
 	})
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return v, err
 }
 
 func (s *Service) Get(ctx context.Context, id int64) (sqlc.Venue, error) {
@@ -160,16 +166,64 @@ func buildSearchParams(f SearchFilters) (sqlc.SearchPublishedVenuesParams, error
 
 // Search é a listagem pública da home com filtros opcionais (item #3).
 // ponytail: sem cache ainda. O cache Redis entra quando o tráfego pedir.
-func (s *Service) Search(ctx context.Context, f SearchFilters) ([]sqlc.SearchPublishedVenuesRow, error) {
+// PublicVenue é o card da listagem pública (sem dados sensíveis do host).
+type PublicVenue struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Capacity    int32  `json:"capacity"`
+	PricePerDay string `json:"price_per_day"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	CoverURL    string `json:"cover_url"`
+}
+
+func toPublicVenues(rows []sqlc.SearchPublishedVenuesRow) []PublicVenue {
+	out := make([]PublicVenue, 0, len(rows))
+	for _, v := range rows {
+		out = append(out, PublicVenue{
+			ID: v.ID, Title: v.Title, Description: v.Description, Capacity: v.Capacity,
+			PricePerDay: priceString(v.PricePerDay), City: v.City, State: v.State, CoverURL: v.CoverUrl,
+		})
+	}
+	return out
+}
+
+// isEmpty: nenhum filtro ativo (a listagem sem filtros é a cacheável).
+func (f SearchFilters) isEmpty() bool {
+	return strings.TrimSpace(f.City) == "" && f.MinCapacity == 0 &&
+		strings.TrimSpace(f.MaxPrice) == "" && strings.TrimSpace(f.Query) == "" &&
+		len(f.Amenities) == 0
+}
+
+func (s *Service) Search(ctx context.Context, f SearchFilters) ([]PublicVenue, error) {
+	cacheable := f.isEmpty()
+	if cacheable {
+		if list, ok := s.cachedPublicList(ctx); ok {
+			return list, nil
+		}
+	}
 	params, err := buildSearchParams(f)
 	if err != nil {
 		return nil, err
 	}
-	return s.q.SearchPublishedVenues(ctx, params)
+	rows, err := s.q.SearchPublishedVenues(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	list := toPublicVenues(rows)
+	if cacheable {
+		s.cachePublicList(ctx, list)
+	}
+	return list, nil
 }
 
 func (s *Service) Publish(ctx context.Context, id int64) (sqlc.Venue, error) {
-	return s.q.PublishVenue(ctx, id)
+	v, err := s.q.PublishVenue(ctx, id)
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return v, err
 }
 
 func (s *Service) Photos(ctx context.Context, venueID int64) ([]sqlc.VenuePhoto, error) {
@@ -191,7 +245,11 @@ func (s *Service) Delete(ctx context.Context, id int64) error {
 			}
 		}
 	}
-	return s.q.DeleteVenue(ctx, id)
+	err := s.q.DeleteVenue(ctx, id)
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return err
 }
 
 // AddPhoto sobe o arquivo no MinIO e registra a linha (posição = nº atual de fotos).
@@ -210,12 +268,16 @@ func (s *Service) AddPhoto(ctx context.Context, venueID int64, key, contentType 
 	if err != nil {
 		return sqlc.VenuePhoto{}, err
 	}
-	return s.q.AddVenuePhoto(ctx, sqlc.AddVenuePhotoParams{
+	photo, err := s.q.AddVenuePhoto(ctx, sqlc.AddVenuePhotoParams{
 		VenueID:   venueID,
 		ObjectKey: key,
 		Url:       url,
 		Position:  int32(len(existing)),
 	})
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return photo, err
 }
 
 // DeletePhoto remove a foto (verifica que pertence à venue informada).
@@ -230,7 +292,11 @@ func (s *Service) DeletePhoto(ctx context.Context, venueID, photoID int64) error
 	if s.store != nil {
 		_ = s.store.Delete(ctx, photo.ObjectKey)
 	}
-	return s.q.DeleteVenuePhoto(ctx, photoID)
+	err = s.q.DeleteVenuePhoto(ctx, photoID)
+	if err == nil {
+		s.invalidatePublicList(ctx)
+	}
+	return err
 }
 
 func parsePrice(s string) (pgtype.Numeric, error) {

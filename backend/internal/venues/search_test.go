@@ -79,3 +79,20 @@ func TestParseSearchFilters(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchFiltersIsEmpty(t *testing.T) {
+	if !(SearchFilters{}).isEmpty() {
+		t.Fatal("zero-value deveria ser vazio")
+	}
+	if !(SearchFilters{City: "  ", MaxPrice: " ", Query: "\t"}).isEmpty() {
+		t.Fatal("só espaços deveria contar como vazio")
+	}
+	cases := []SearchFilters{
+		{City: "SP"}, {MinCapacity: 1}, {MaxPrice: "100"}, {Query: "x"}, {Amenities: []string{"wifi"}},
+	}
+	for i, f := range cases {
+		if f.isEmpty() {
+			t.Fatalf("caso %d deveria ter filtro: %+v", i, f)
+		}
+	}
+}
