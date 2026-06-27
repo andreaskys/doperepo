@@ -14,6 +14,24 @@ trap 'rm -rf "$TMP"' EXIT
 
 jqget() { python3 -c "import sys,json;print(json.load(sys.stdin)$1)"; }
 
+# Fonte TTF p/ o título na capa (ImageMagick não tem default configurada).
+FONT="$(ls /usr/share/fonts/**/*Bold*.ttf 2>/dev/null | head -1 || true)"
+
+# cover COOKIEFILE VENUE_ID TITLE "COR1:COR2" — gera um gradiente (com título se
+# houver fonte) e sobe como foto de capa. Pula se não houver ImageMagick.
+cover() {
+  command -v magick >/dev/null || return 0
+  local cookie="$1" id="$2" title="$3" c1="${4%%:*}" c2="${4##*:}" img="$TMP/cover_$id.jpg"
+  if [ -n "$FONT" ]; then
+    magick -size 800x600 gradient:"$c1"-"$c2" -gravity center -font "$FONT" \
+      -pointsize 46 -fill white -annotate 0 "$title" "$img" 2>/dev/null
+  else
+    magick -size 800x600 gradient:"$c1"-"$c2" "$img" 2>/dev/null
+  fi
+  [ -s "$img" ] && curl -s -o /dev/null -H "Origin: $ORIGIN" -b "$cookie" \
+    -F "photo=@$img;type=image/jpeg" "$BASE/venues/$id/photos"
+}
+
 # auth COOKIEFILE NAME EMAIL — registra (ou loga se já existe) e guarda o cookie.
 auth() {
   local cookie="$1" name="$2" email="$3" code
@@ -52,6 +70,12 @@ V2=$(venue "$TMP/host.txt" '{"title":"Galpão Industrial","description":"Espaço
 V3=$(venue "$TMP/host.txt" '{"title":"Chácara do Lago","description":"Eventos ao ar livre à beira do lago.","capacity":80,"price_per_day":"600","address":"Estrada do Lago, km 4","city":"Campinas","state":"SP","amenities":["piscina","churrasqueira","estacionamento"],"features":["lago","quiosque"]}')
 V4=$(venue "$TMP/host.txt" '{"title":"Rooftop Centro","description":"Cobertura com vista para confraternizações.","capacity":40,"price_per_day":"2000","address":"Rua Alta, 900","city":"Rio de Janeiro","state":"RJ","amenities":["wifi","ar_condicionado"],"features":["vista panorâmica"]}')
 echo "  venues: $V1 $V2 $V3 $V4"
+
+echo "→ capas (gradiente; pula se faltar ImageMagick)"
+cover "$TMP/host.txt" "$V1" "Salão Vista Verde" "#6b4fd0:#3b82f6"
+cover "$TMP/host.txt" "$V2" "Galpão Industrial" "#0ea5e9:#0f172a"
+cover "$TMP/host.txt" "$V3" "Chácara do Lago"   "#10b981:#065f46"
+cover "$TMP/host.txt" "$V4" "Rooftop Centro"    "#f59e0b:#b91c1c"
 
 echo "→ reservas (estados variados)"
 B1=$(book "$TMP/guest.txt" "$V1" 2026-09-01 2026-09-03)   # → confirmar
