@@ -23,7 +23,8 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 - ✅ **Cache Redis** da listagem (cache-aside + invalidação)
 - ✅ **Seed de QA** (`scripts/seed-qa.sh`) com contas, espaços, reservas e capas
 - ✅ **Endereço + mapa** no anúncio (rua/bairro/cidade/UF/complemento + Leaflet) e **busca por CEP** (ViaCEP autofill)
-- ✅ **Perfil & conta (Fase A)** — `/perfil` no Dock: cabeçalho (avatar/role/membro-desde/bio), editar conta (nome/bio, upload de foto, trocar senha) e preview dos anúncios. Backend: `bio`/`avatar_url` + `PATCH /me`, `POST /me/avatar`, `POST /me/password` 🟡 **Fase B (dashboard financeiro) pendente**
+- ✅ **Perfil & conta (Fase A)** — `/perfil` no Dock: cabeçalho (avatar/role/membro-desde/bio), editar conta (nome/bio, upload de foto, trocar senha) e preview dos anúncios. Backend: `bio`/`avatar_url` + `PATCH /me`, `POST /me/avatar`, `POST /me/password`
+- ✅ **Dashboard financeiro (Fase B)** — resumo do host no `/perfil`: cards de KPI (receita confirmada/pendente, reservas, ticket médio, espaços) com count-up + gráfico de receita por mês (SVG/CSS animado). Backend: `GET /host/metrics` (agregação SQL)
 
 Cada um tem spec+plano em `docs/superpowers/`.
 
