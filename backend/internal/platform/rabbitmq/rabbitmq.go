@@ -46,6 +46,16 @@ func (p *Publisher) Publish(ctx context.Context, queue string, body []byte) erro
 	})
 }
 
+// Consume abre um canal PRÓPRIO (o canal de publish não é goroutine-safe) e
+// entrega as mensagens da fila com ack manual.
+func (p *Publisher) Consume(queue string) (<-chan amqp.Delivery, error) {
+	ch, err := p.conn.Channel()
+	if err != nil {
+		return nil, err
+	}
+	return ch.Consume(queue, "", false, false, false, false, nil)
+}
+
 func (p *Publisher) Close() {
 	if p.ch != nil {
 		_ = p.ch.Close()

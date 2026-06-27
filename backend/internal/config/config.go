@@ -21,6 +21,8 @@ type Config struct {
 	S3SecretKey string
 	S3Bucket    string
 	S3PublicURL string // base pública p/ montar URL das fotos (host do browser)
+
+	SMTPAddr string // host:port do SMTP (Mailpit em dev); vazio = worker desligado
 }
 
 func Load() (Config, error) {
@@ -36,6 +38,7 @@ func Load() (Config, error) {
 		S3SecretKey: os.Getenv("S3_SECRET_KEY"),
 		S3Bucket:    get("S3_BUCKET", "venue-photos"),
 		S3PublicURL: get("S3_PUBLIC_URL", "http://localhost:9000"),
+		SMTPAddr:    get("SMTP_ADDR", ""),
 	}
 	if cfg.DatabaseURL == "" {
 		return cfg, fmt.Errorf("DATABASE_URL é obrigatória")
