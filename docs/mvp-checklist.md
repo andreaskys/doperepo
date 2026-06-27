@@ -6,7 +6,7 @@ Status: ⬜ não começado · 🟡 parcial (fundação) · ✅ pronto
 | --- | --- | --- | --- |
 | 1 | Auth + roles (GUEST/HOST) | ✅ | register/login/logout/me + sessão Redis (cookie httpOnly) + bcrypt + `PATCH /me/role` (GUEST→HOST). CORS p/ o front. Páginas `/login` e `/signup`. |
 | 2 | CRUD de Venues + upload de fotos | ✅ | CRUD completo + galeria MinIO (public-read), wizard multi-step (`/venues/new`), rascunho→publicar, comodidades (`text[]`), lat/lng, promoção GUEST→HOST ao anunciar. `/venues/mine` e edição. |
-| 3 | Listagem + busca + cache Redis | 🟡 | Listagem pública pronta: `GET /public/venues` (publicados + foto de capa) + grid na home, Dock (React Bits) no topo, footer. Falta busca/filtros + cache Redis. |
+| 3 | Listagem + busca + cache Redis | 🟡 | Listagem + **busca/filtros prontos**: `GET /public/venues` aceita `city` (case-insensitive), `min_capacity`, `max_price`, `q` (ILIKE título/descrição) e `amenities` (`@>`), combinando via AND; barra de filtros na home com estado na URL; índices em `0004`. **Falta só o cache Redis** (adiado — ver `docs/superpowers/specs/2026-06-26-busca-filtros-venues-design.md`). |
 | 4 | Fluxo de reserva (UI seleção de datas) | ✅ | Tela `/venues/:id/reservar` com **Stepper (React Bits)**, datas nativas, total calculado, `/reservas` (minhas reservas). Detalhe público + booked ranges. |
 | 5 | **Concorrência (crítico)** | ✅ | Tx pgx: `LockVenueForBooking` (FOR UPDATE) → `HasOverlappingBooking` → `CreateBooking`. **Provado:** 2 reservas paralelas → 1×201, 1×409. + EXCLUDE constraint como backstop. |
 

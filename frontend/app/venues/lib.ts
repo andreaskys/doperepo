@@ -126,3 +126,27 @@ export const AMENITIES: Amenity[] = [
   { key: 'churrasqueira', label: 'Churrasqueira' },
   { key: 'palco', label: 'Palco' },
 ];
+
+export interface VenueSearchParams {
+  city?: string;
+  minCapacity?: number;
+  maxPrice?: number;
+  q?: string;
+  amenities?: string[];
+}
+
+// Endpoint público (sem auth) — não passa pelo req()/401.
+export const PublicAPI = {
+  searchVenues: async (params: VenueSearchParams): Promise<Venue[]> => {
+    const qs = new URLSearchParams();
+    if (params.city?.trim()) qs.set('city', params.city.trim());
+    if (params.minCapacity && params.minCapacity > 0) qs.set('min_capacity', String(params.minCapacity));
+    if (params.maxPrice && params.maxPrice > 0) qs.set('max_price', String(params.maxPrice));
+    if (params.q?.trim()) qs.set('q', params.q.trim());
+    if (params.amenities?.length) qs.set('amenities', params.amenities.join(','));
+    const query = qs.toString();
+    const res = await fetch(`${API}/api/v1/public/venues${query ? `?${query}` : ''}`);
+    if (!res.ok) throw new Error('Erro ao carregar espaços');
+    return res.json();
+  },
+};

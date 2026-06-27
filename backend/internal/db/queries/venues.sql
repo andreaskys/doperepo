@@ -12,13 +12,18 @@ RETURNING *;
 -- name: GetVenueByID :one
 SELECT * FROM venues WHERE id = $1;
 
--- name: ListPublishedVenues :many
--- Listagem pública da home: só publicados, com a foto de capa (1ª foto).
+-- name: SearchPublishedVenues :many
+-- Listagem pública com filtros opcionais (sentinela vazio = sem filtro).
 SELECT
     v.id, v.title, v.description, v.capacity, v.price_per_day, v.city, v.state,
     COALESCE((SELECT p.url FROM venue_photos p WHERE p.venue_id = v.id ORDER BY p.position, p.id LIMIT 1), '')::text AS cover_url
 FROM venues v
 WHERE v.status = 'PUBLISHED'
+  AND (@city::text = '' OR lower(v.city) = lower(@city::text))
+  AND (@min_capacity::int = 0 OR v.capacity >= @min_capacity::int)
+  AND (@max_price::numeric = 0 OR v.price_per_day <= @max_price::numeric)
+  AND (@q::text = '' OR v.title ILIKE '%' || @q::text || '%' OR v.description ILIKE '%' || @q::text || '%')
+  AND (cardinality(@amenities::text[]) = 0 OR v.amenities @> @amenities::text[])
 ORDER BY v.created_at DESC
 LIMIT 60;
 

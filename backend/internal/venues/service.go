@@ -117,10 +117,55 @@ func (s *Service) ListByHost(ctx context.Context, hostID int64) ([]sqlc.Venue, e
 	return s.q.ListVenuesByHost(ctx, hostID)
 }
 
-// ListPublished é a listagem pública da home (apenas publicados).
-// ponytail: sem cache ainda. O cache Redis do item #3 entra quando o tráfego pedir.
-func (s *Service) ListPublished(ctx context.Context) ([]sqlc.ListPublishedVenuesRow, error) {
-	return s.q.ListPublishedVenues(ctx)
+// SearchFilters são os filtros opcionais da listagem pública (item #3).
+// Valor "zero" em cada campo significa "sem esse filtro".
+type SearchFilters struct {
+	City        string   // "" = sem filtro
+	MinCapacity int32    // 0  = sem filtro
+	MaxPrice    string   // "" = sem filtro (parseado p/ numeric)
+	Query       string   // "" = sem filtro
+	Amenities   []string // vazio = sem filtro
+}
+
+// sanitizeAmenities mantém só comodidades conhecidas (descarta o resto em silêncio).
+func sanitizeAmenities(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, a := range in {
+		if allowedAmenities[a] {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+// buildSearchParams normaliza os filtros e monta os params do sqlc.
+func buildSearchParams(f SearchFilters) (sqlc.SearchPublishedVenuesParams, error) {
+	p := sqlc.SearchPublishedVenuesParams{
+		City:        strings.TrimSpace(f.City),
+		MinCapacity: f.MinCapacity,
+		Q:           strings.TrimSpace(f.Query),
+		Amenities:   sanitizeAmenities(f.Amenities),
+	}
+	priceStr := strings.TrimSpace(f.MaxPrice)
+	if priceStr == "" {
+		priceStr = "0" // sentinela: sem filtro de preço
+	}
+	var n pgtype.Numeric
+	if err := n.Scan(priceStr); err != nil {
+		return p, ErrInvalidPrice
+	}
+	p.MaxPrice = n
+	return p, nil
+}
+
+// Search é a listagem pública da home com filtros opcionais (item #3).
+// ponytail: sem cache ainda. O cache Redis entra quando o tráfego pedir.
+func (s *Service) Search(ctx context.Context, f SearchFilters) ([]sqlc.SearchPublishedVenuesRow, error) {
+	params, err := buildSearchParams(f)
+	if err != nil {
+		return nil, err
+	}
+	return s.q.SearchPublishedVenues(ctx, params)
 }
 
 func (s *Service) Publish(ctx context.Context, id int64) (sqlc.Venue, error) {

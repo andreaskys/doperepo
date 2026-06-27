@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import VenueGrid from './components/venue-grid';
+import VenueFilters from './components/venue-filters';
 import Footer from './components/footer';
 
 export default function Home() {
@@ -11,7 +13,10 @@ export default function Home() {
         </section>
         <section className="home-section">
           <h2>Espaços em destaque</h2>
-          <VenueGrid />
+          <Suspense fallback={<p className="muted">Carregando…</p>}>
+            <VenueFilters />
+            <VenueGrid />
+          </Suspense>
         </section>
       </main>
       <Footer />

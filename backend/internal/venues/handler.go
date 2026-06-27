@@ -5,8 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -85,8 +88,35 @@ func (h *Handler) create(c *gin.Context) {
 	c.JSON(http.StatusCreated, venueDTO(v, nil))
 }
 
+// parseSearchFilters lê os filtros da query string. Valores inválidos viram
+// sentinela (a listagem pública nunca retorna 400 por causa de filtro).
+func parseSearchFilters(q url.Values) SearchFilters {
+	f := SearchFilters{
+		City:  q.Get("city"),
+		Query: q.Get("q"),
+	}
+	if n, err := strconv.Atoi(strings.TrimSpace(q.Get("min_capacity"))); err == nil && n > 0 {
+		f.MinCapacity = int32(n)
+	}
+	if mp := strings.TrimSpace(q.Get("max_price")); mp != "" {
+		// Só aceita preço finito e positivo; o resto vira sentinela (sem filtro),
+		// para nunca dar 500 no Numeric.Scan nem esvaziar a lista com valor negativo.
+		if v, err := strconv.ParseFloat(mp, 64); err == nil && !math.IsInf(v, 0) && !math.IsNaN(v) && v > 0 {
+			f.MaxPrice = mp
+		}
+	}
+	if a := strings.TrimSpace(q.Get("amenities")); a != "" {
+		for _, part := range strings.Split(a, ",") {
+			if p := strings.TrimSpace(part); p != "" {
+				f.Amenities = append(f.Amenities, p)
+			}
+		}
+	}
+	return f
+}
+
 func (h *Handler) listPublic(c *gin.Context) {
-	vs, err := h.svc.ListPublished(c.Request.Context())
+	vs, err := h.svc.Search(c.Request.Context(), parseSearchFilters(c.Request.URL.Query()))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "erro ao listar"})
 		return
