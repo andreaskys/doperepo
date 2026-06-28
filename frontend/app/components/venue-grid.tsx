@@ -16,8 +16,12 @@ export default function VenueGrid() {
     setError('');
     PublicAPI.searchVenues({
       city: params.get('city') ?? undefined,
+      state: params.get('state') ?? undefined,
       minCapacity: params.get('min_capacity') ? Number(params.get('min_capacity')) : undefined,
       maxPrice: params.get('max_price') ? Number(params.get('max_price')) : undefined,
+      minPrice: params.get('min_price') ? Number(params.get('min_price')) : undefined,
+      startDate: params.get('start') ?? undefined,
+      endDate: params.get('end') ?? undefined,
       q: params.get('q') ?? undefined,
       amenities: (params.get('amenities') ?? '').split(',').map((a) => a.trim()).filter(Boolean),
     })
