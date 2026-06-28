@@ -1,0 +1,14 @@
+.drp { position: relative; }
+.drp-field { text-align: left; cursor: pointer; width: 100%; }
+.drp-pop { position: absolute; z-index: 60; top: calc(100% + 6px); left: 0; width: 280px; background: #fff; border: 1px solid #e6e4ef; border-radius: 14px; box-shadow: 0 12px 40px rgba(20, 16, 50, 0.15); padding: 12px; }
+.drp-head { display: flex; align-items: center; justify-content: space-between; font-weight: 600; margin-bottom: 8px; }
+.drp-head button { border: none; background: none; font-size: 20px; cursor: pointer; color: var(--brand-purple); width: 30px; height: 30px; border-radius: 8px; }
+.drp-wd, .drp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.drp-wd { font-size: 11px; color: #888; text-align: center; margin-bottom: 4px; }
+.drp-day { border: none; background: none; cursor: pointer; height: 34px; border-radius: 8px; font: inherit; color: #1f2430; }
+.drp-day:hover:not(:disabled) { background: var(--brand-tint); }
+.drp-day:disabled { color: #ccc; cursor: default; }
+.drp-day.on { background: var(--brand-gradient); color: #fff; font-weight: 600; }
+.drp-day.mid { background: var(--brand-tint); }
+.drp-foot { margin-top: 8px; text-align: right; }
+.drp-foot button { border: none; background: none; color: var(--brand-purple); cursor: pointer; font-size: 13px; }
