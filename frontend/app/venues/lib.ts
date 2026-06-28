@@ -212,6 +212,7 @@ export const AMENITIES: Amenity[] = [
 export interface VenueSearchParams {
   city?: string;
   state?: string;
+  loc?: string;
   minCapacity?: number;
   maxPrice?: number;
   minPrice?: number;
@@ -233,6 +234,7 @@ export const PublicAPI = {
     const qs = new URLSearchParams();
     if (params.city?.trim()) qs.set('city', params.city.trim());
     if (params.state?.trim()) qs.set('state', params.state.trim());
+    if (params.loc?.trim()) qs.set('loc', params.loc.trim());
     if (params.minCapacity && params.minCapacity > 0) qs.set('min_capacity', String(params.minCapacity));
     if (params.maxPrice && params.maxPrice > 0) qs.set('max_price', String(params.maxPrice));
     if (params.minPrice && params.minPrice > 0) qs.set('min_price', String(params.minPrice));
