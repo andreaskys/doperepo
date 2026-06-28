@@ -355,6 +355,15 @@ WHERE v.status = 'PUBLISHED'
   AND ($3::numeric = 0 OR v.price_per_day <= $3::numeric)
   AND ($4::text = '' OR v.title ILIKE '%' || $4::text || '%' OR v.description ILIKE '%' || $4::text || '%')
   AND (cardinality($5::text[]) = 0 OR v.amenities @> $5::text[])
+  AND ($6::text = '' OR lower(v.state) = lower($6::text))
+  AND ($7::numeric = 0 OR v.price_per_day >= $7::numeric)
+  AND (
+    $8::date IS NULL OR $9::date IS NULL OR NOT EXISTS (
+      SELECT 1 FROM bookings b
+      WHERE b.venue_id = v.id AND b.status <> 'CANCELLED'
+        AND daterange(b.start_date, b.end_date, '[)') && daterange($8::date, $9::date, '[)')
+    )
+  )
 ORDER BY v.created_at DESC
 LIMIT 60
 `
@@ -365,6 +374,10 @@ type SearchPublishedVenuesParams struct {
 	MaxPrice    pgtype.Numeric `json:"max_price"`
 	Q           string         `json:"q"`
 	Amenities   []string       `json:"amenities"`
+	State       string         `json:"state"`
+	MinPrice    pgtype.Numeric `json:"min_price"`
+	StartDate   pgtype.Date    `json:"start_date"`
+	EndDate     pgtype.Date    `json:"end_date"`
 }
 
 type SearchPublishedVenuesRow struct {
@@ -386,6 +399,10 @@ func (q *Queries) SearchPublishedVenues(ctx context.Context, arg SearchPublished
 		arg.MaxPrice,
 		arg.Q,
 		arg.Amenities,
+		arg.State,
+		arg.MinPrice,
+		arg.StartDate,
+		arg.EndDate,
 	)
 	if err != nil {
 		return nil, err

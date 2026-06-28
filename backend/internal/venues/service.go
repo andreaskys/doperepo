@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -135,11 +136,15 @@ func (s *Service) ListByHost(ctx context.Context, hostID int64) ([]sqlc.Venue, e
 // SearchFilters são os filtros opcionais da listagem pública (item #3).
 // Valor "zero" em cada campo significa "sem esse filtro".
 type SearchFilters struct {
-	City        string   // "" = sem filtro
-	MinCapacity int32    // 0  = sem filtro
-	MaxPrice    string   // "" = sem filtro (parseado p/ numeric)
-	Query       string   // "" = sem filtro
-	Amenities   []string // vazio = sem filtro
+	City        string     // "" = sem filtro
+	MinCapacity int32      // 0  = sem filtro
+	MaxPrice    string     // "" = sem filtro (parseado p/ numeric)
+	MinPrice    string     // "" = sem filtro
+	State       string     // "" = sem filtro
+	Start       *time.Time // nil = sem filtro de data
+	End         *time.Time // nil = sem filtro de data
+	Query       string     // "" = sem filtro
+	Amenities   []string   // vazio = sem filtro
 }
 
 // sanitizeAmenities mantém só comodidades conhecidas (descarta o resto em silêncio).
@@ -170,6 +175,24 @@ func buildSearchParams(f SearchFilters) (sqlc.SearchPublishedVenuesParams, error
 		return p, ErrInvalidPrice
 	}
 	p.MaxPrice = n
+
+	p.State = strings.TrimSpace(f.State)
+
+	minStr := strings.TrimSpace(f.MinPrice)
+	if minStr == "" {
+		minStr = "0"
+	}
+	var mn pgtype.Numeric
+	if err := mn.Scan(minStr); err != nil {
+		return p, ErrInvalidPrice
+	}
+	p.MinPrice = mn
+
+	// disponibilidade só quando as duas datas existem e start < end
+	if f.Start != nil && f.End != nil && f.Start.Before(*f.End) {
+		p.StartDate = pgtype.Date{Time: *f.Start, Valid: true}
+		p.EndDate = pgtype.Date{Time: *f.End, Valid: true}
+	}
 	return p, nil
 }
 
@@ -201,8 +224,9 @@ func toPublicVenues(rows []sqlc.SearchPublishedVenuesRow) []PublicVenue {
 // isEmpty: nenhum filtro ativo (a listagem sem filtros é a cacheável).
 func (f SearchFilters) isEmpty() bool {
 	return strings.TrimSpace(f.City) == "" && f.MinCapacity == 0 &&
-		strings.TrimSpace(f.MaxPrice) == "" && strings.TrimSpace(f.Query) == "" &&
-		len(f.Amenities) == 0
+		strings.TrimSpace(f.MaxPrice) == "" && strings.TrimSpace(f.MinPrice) == "" &&
+		strings.TrimSpace(f.State) == "" && f.Start == nil && f.End == nil &&
+		strings.TrimSpace(f.Query) == "" && len(f.Amenities) == 0
 }
 
 func (s *Service) Search(ctx context.Context, f SearchFilters) ([]PublicVenue, error) {

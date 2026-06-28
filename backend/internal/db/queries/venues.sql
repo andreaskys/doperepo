@@ -24,6 +24,15 @@ WHERE v.status = 'PUBLISHED'
   AND (@max_price::numeric = 0 OR v.price_per_day <= @max_price::numeric)
   AND (@q::text = '' OR v.title ILIKE '%' || @q::text || '%' OR v.description ILIKE '%' || @q::text || '%')
   AND (cardinality(@amenities::text[]) = 0 OR v.amenities @> @amenities::text[])
+  AND (@state::text = '' OR lower(v.state) = lower(@state::text))
+  AND (@min_price::numeric = 0 OR v.price_per_day >= @min_price::numeric)
+  AND (
+    @start_date::date IS NULL OR @end_date::date IS NULL OR NOT EXISTS (
+      SELECT 1 FROM bookings b
+      WHERE b.venue_id = v.id AND b.status <> 'CANCELLED'
+        AND daterange(b.start_date, b.end_date, '[)') && daterange(@start_date::date, @end_date::date, '[)')
+    )
+  )
 ORDER BY v.created_at DESC
 LIMIT 60;
 

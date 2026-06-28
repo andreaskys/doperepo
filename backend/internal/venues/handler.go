@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -116,6 +117,18 @@ func parseSearchFilters(q url.Values) SearchFilters {
 				f.Amenities = append(f.Amenities, p)
 			}
 		}
+	}
+	f.State = q.Get("state")
+	if mp := strings.TrimSpace(q.Get("min_price")); mp != "" {
+		if v, err := strconv.ParseFloat(mp, 64); err == nil && !math.IsInf(v, 0) && !math.IsNaN(v) && v > 0 {
+			f.MinPrice = mp
+		}
+	}
+	if s, err := time.Parse("2006-01-02", strings.TrimSpace(q.Get("start"))); err == nil {
+		f.Start = &s
+	}
+	if e, err := time.Parse("2006-01-02", strings.TrimSpace(q.Get("end"))); err == nil {
+		f.End = &e
 	}
 	return f
 }
