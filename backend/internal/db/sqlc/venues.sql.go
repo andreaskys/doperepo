@@ -356,12 +356,15 @@ WHERE v.status = 'PUBLISHED'
   AND ($4::text = '' OR v.title ILIKE '%' || $4::text || '%' OR v.description ILIKE '%' || $4::text || '%')
   AND (cardinality($5::text[]) = 0 OR v.amenities @> $5::text[])
   AND ($6::text = '' OR lower(v.state) = lower($6::text))
-  AND ($7::numeric = 0 OR v.price_per_day >= $7::numeric)
+  AND ($7::text = '' OR v.city ILIKE '%' || $7::text || '%'
+       OR v.state ILIKE '%' || $7::text || '%'
+       OR v.neighborhood ILIKE '%' || $7::text || '%')
+  AND ($8::numeric = 0 OR v.price_per_day >= $8::numeric)
   AND (
-    $8::date IS NULL OR $9::date IS NULL OR NOT EXISTS (
+    $9::date IS NULL OR $10::date IS NULL OR NOT EXISTS (
       SELECT 1 FROM bookings b
       WHERE b.venue_id = v.id AND b.status <> 'CANCELLED'
-        AND daterange(b.start_date, b.end_date, '[)') && daterange($8::date, $9::date, '[)')
+        AND daterange(b.start_date, b.end_date, '[)') && daterange($9::date, $10::date, '[)')
     )
   )
 ORDER BY v.created_at DESC
@@ -375,6 +378,7 @@ type SearchPublishedVenuesParams struct {
 	Q           string         `json:"q"`
 	Amenities   []string       `json:"amenities"`
 	State       string         `json:"state"`
+	Loc         string         `json:"loc"`
 	MinPrice    pgtype.Numeric `json:"min_price"`
 	StartDate   pgtype.Date    `json:"start_date"`
 	EndDate     pgtype.Date    `json:"end_date"`
@@ -400,6 +404,7 @@ func (q *Queries) SearchPublishedVenues(ctx context.Context, arg SearchPublished
 		arg.Q,
 		arg.Amenities,
 		arg.State,
+		arg.Loc,
 		arg.MinPrice,
 		arg.StartDate,
 		arg.EndDate,

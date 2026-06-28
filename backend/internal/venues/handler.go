@@ -119,6 +119,7 @@ func parseSearchFilters(q url.Values) SearchFilters {
 		}
 	}
 	f.State = q.Get("state")
+	f.Loc = q.Get("loc")
 	if mp := strings.TrimSpace(q.Get("min_price")); mp != "" {
 		if v, err := strconv.ParseFloat(mp, 64); err == nil && !math.IsInf(v, 0) && !math.IsNaN(v) && v > 0 {
 			f.MinPrice = mp

@@ -25,6 +25,9 @@ WHERE v.status = 'PUBLISHED'
   AND (@q::text = '' OR v.title ILIKE '%' || @q::text || '%' OR v.description ILIKE '%' || @q::text || '%')
   AND (cardinality(@amenities::text[]) = 0 OR v.amenities @> @amenities::text[])
   AND (@state::text = '' OR lower(v.state) = lower(@state::text))
+  AND (@loc::text = '' OR v.city ILIKE '%' || @loc::text || '%'
+       OR v.state ILIKE '%' || @loc::text || '%'
+       OR v.neighborhood ILIKE '%' || @loc::text || '%')
   AND (@min_price::numeric = 0 OR v.price_per_day >= @min_price::numeric)
   AND (
     @start_date::date IS NULL OR @end_date::date IS NULL OR NOT EXISTS (

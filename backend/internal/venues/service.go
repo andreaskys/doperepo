@@ -141,6 +141,7 @@ type SearchFilters struct {
 	MaxPrice    string     // "" = sem filtro (parseado p/ numeric)
 	MinPrice    string     // "" = sem filtro
 	State       string     // "" = sem filtro
+	Loc         string     // "" = sem filtro (casa cidade/estado/bairro)
 	Start       *time.Time // nil = sem filtro de data
 	End         *time.Time // nil = sem filtro de data
 	Query       string     // "" = sem filtro
@@ -177,6 +178,7 @@ func buildSearchParams(f SearchFilters) (sqlc.SearchPublishedVenuesParams, error
 	p.MaxPrice = n
 
 	p.State = strings.TrimSpace(f.State)
+	p.Loc = strings.TrimSpace(f.Loc)
 
 	minStr := strings.TrimSpace(f.MinPrice)
 	if minStr == "" {
@@ -225,7 +227,8 @@ func toPublicVenues(rows []sqlc.SearchPublishedVenuesRow) []PublicVenue {
 func (f SearchFilters) isEmpty() bool {
 	return strings.TrimSpace(f.City) == "" && f.MinCapacity == 0 &&
 		strings.TrimSpace(f.MaxPrice) == "" && strings.TrimSpace(f.MinPrice) == "" &&
-		strings.TrimSpace(f.State) == "" && f.Start == nil && f.End == nil &&
+		strings.TrimSpace(f.State) == "" && strings.TrimSpace(f.Loc) == "" &&
+		f.Start == nil && f.End == nil &&
 		strings.TrimSpace(f.Query) == "" && len(f.Amenities) == 0
 }
 
