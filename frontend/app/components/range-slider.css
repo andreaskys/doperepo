@@ -1,0 +1,9 @@
+.rs { position: relative; height: 46px; padding-top: 8px; }
+.rs-track { position: absolute; top: 16px; left: 0; right: 0; height: 5px; border-radius: 9999px; background: rgba(107, 79, 208, 0.18); }
+.rs-fill { position: absolute; top: 0; bottom: 0; background: var(--brand-gradient); border-radius: 9999px; }
+.rs-input { position: absolute; top: 8px; left: 0; width: 100%; height: 22px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; pointer-events: none; }
+.rs-input::-webkit-slider-runnable-track { background: transparent; border: none; }
+.rs-input::-moz-range-track { background: transparent; border: none; }
+.rs-input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--brand-purple); cursor: grab; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); }
+.rs-input::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid var(--brand-purple); cursor: grab; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2); }
+.rs-values { position: absolute; top: 28px; left: 0; right: 0; display: flex; justify-content: space-between; font-size: 12px; color: var(--brand-purple); font-weight: 600; }
